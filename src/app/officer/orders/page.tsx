@@ -32,7 +32,7 @@ export default function OfficerOrdersPage() {
           <div className="officer-table-row" key={order.id}>
             <div className="member-cell"><span className="avatar soft small">{initials(order.user?.fullName || "Member")}</span><div><strong>{order.user?.fullName || "Member"}</strong><small>{order.user?.room}</small></div></div>
             <div className="meal-cell simple"><span><UtensilsCrossed size={17} /></span><div><strong>{order.item.name}</strong><small>{order.item.mealPeriod} · Qty {order.quantity}</small></div></div>
-            <span>{timeAgo(order.createdAt)}</span><strong>{formatMoney(order.total)}</strong>
+            <span suppressHydrationWarning>{timeAgo(order.createdAt)}</span><strong>{formatMoney(order.total)}</strong>
             {order.status === "pending" ? <div className="action-buttons"><button className="button reject small" onClick={() => void updateOrderStatus(order.id, "rejected")}><X size={15} /> Reject</button><button className="button confirm small" onClick={() => void updateOrderStatus(order.id, "confirmed")}><Check size={15} /> Confirm</button></div> : <StatusPill status={order.status} />}
           </div>
         )) : <EmptyState title="No matching orders" text="Try another status or search term." />}

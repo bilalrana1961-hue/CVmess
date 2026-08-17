@@ -24,7 +24,7 @@ export default function OrdersPage() {
         <div className="table-head"><span>Meal</span><span>Service date</span><span>Amount</span><span>Status</span><span /></div>
         {own.length ? own.map((order) => (
           <div className="table-row" key={order.id}>
-            <div className="meal-cell"><span><UtensilsCrossed size={18} /></span><div><strong>{order.item.name}</strong><small>{order.item.mealPeriod} · Ordered {timeAgo(order.createdAt)}</small></div></div>
+            <div className="meal-cell"><span><UtensilsCrossed size={18} /></span><div><strong>{order.item.name}</strong><small suppressHydrationWarning>{order.item.mealPeriod} · Ordered {timeAgo(order.createdAt)}</small></div></div>
             <span className="date-cell"><CalendarDays size={15} />{friendlyDate(order.item.serviceDate)}</span>
             <strong>{formatMoney(order.total)}</strong>
             <StatusPill status={order.status} />

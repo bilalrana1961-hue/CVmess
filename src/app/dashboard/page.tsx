@@ -42,7 +42,7 @@ export default function DashboardPage() {
             {ownOrders.slice(0, 4).map((order) => (
               <div className="order-row" key={order.id}>
                 <span className="order-icon"><UtensilsCrossed size={17} /></span>
-                <div className="order-main"><strong>{order.item.name}</strong><small>{order.item.mealPeriod} · {friendlyDate(order.item.serviceDate)} · {timeAgo(order.createdAt)}</small></div>
+                <div className="order-main"><strong>{order.item.name}</strong><small suppressHydrationWarning>{order.item.mealPeriod} · {friendlyDate(order.item.serviceDate)} · {timeAgo(order.createdAt)}</small></div>
                 <strong className="order-price">{formatMoney(order.total)}</strong><StatusPill status={order.status} />
               </div>
             ))}

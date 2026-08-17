@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   Bell,
   CalendarDays,
-  ChevronDown,
   ClipboardList,
   LayoutDashboard,
   LogOut,
@@ -21,17 +20,17 @@ import { useCVMess } from "@/components/app-provider";
 import { initials } from "@/lib/format";
 
 const memberNav = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/menu", label: "Weekly menu", icon: CalendarDays },
-  { href: "/orders", label: "My orders", icon: ClipboardList },
-  { href: "/billing", label: "Monthly bill", icon: ReceiptText },
+  { href: "/dashboard", label: "Overview", mobileLabel: "Home", icon: LayoutDashboard },
+  { href: "/menu", label: "Weekly menu", mobileLabel: "Menu", icon: CalendarDays },
+  { href: "/orders", label: "My orders", mobileLabel: "Orders", icon: ClipboardList },
+  { href: "/billing", label: "Monthly bill", mobileLabel: "Bill", icon: ReceiptText },
 ];
 
 const officerNav = [
-  { href: "/officer", label: "Overview", icon: LayoutDashboard },
-  { href: "/officer/orders", label: "Order queue", icon: ClipboardList },
-  { href: "/officer/menu", label: "Manage menu", icon: CalendarDays },
-  { href: "/officer/members", label: "Members & bills", icon: Users },
+  { href: "/officer", label: "Overview", mobileLabel: "Home", icon: LayoutDashboard },
+  { href: "/officer/orders", label: "Order queue", mobileLabel: "Orders", icon: ClipboardList },
+  { href: "/officer/menu", label: "Manage menu", mobileLabel: "Menu", icon: CalendarDays },
+  { href: "/officer/members", label: "Members & bills", mobileLabel: "Members", icon: Users },
 ];
 
 export function PortalShell({ children, title, description }: { children: React.ReactNode; title: string; description?: string }) {
@@ -72,7 +71,7 @@ export function PortalShell({ children, title, description }: { children: React.
       <div className="sidebar-profile">
         <span className="avatar">{initials(profile.fullName)}</span>
         <div><strong>{profile.fullName}</strong><small>{profile.room}</small></div>
-        <button aria-label="Account menu"><ChevronDown size={16} /></button>
+        <button onClick={() => void signOut()} aria-label="Sign out" title="Sign out"><LogOut size={16} /></button>
       </div>
     </>
   );
@@ -80,7 +79,7 @@ export function PortalShell({ children, title, description }: { children: React.
   return (
     <div className="portal-layout">
       <aside className="sidebar">{sidebar}</aside>
-      {mobileOpen && <div className="mobile-drawer"><div className="drawer-backdrop" onClick={() => setMobileOpen(false)} /><aside>{sidebar}</aside></div>}
+      {mobileOpen && <div className="mobile-drawer"><button className="drawer-backdrop" onClick={() => setMobileOpen(false)} aria-label="Close navigation" /><aside>{sidebar}</aside></div>}
       <main className="portal-main">
         <header className="topbar">
           <button className="menu-toggle" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><MenuIcon size={21} /></button>
@@ -107,7 +106,7 @@ export function PortalShell({ children, title, description }: { children: React.
       <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
         {nav.slice(0, 4).map((item) => {
           const active = item.href === "/officer" || item.href === "/dashboard" ? pathname === item.href : pathname.startsWith(item.href);
-          return <Link key={item.href} href={item.href} className={active ? "active" : ""}><item.icon size={20} /><span>{item.label.split(" ")[0]}</span></Link>;
+          return <Link key={item.href} href={item.href} className={active ? "active" : ""}><item.icon size={20} /><span>{item.mobileLabel}</span></Link>;
         })}
       </nav>
     </div>

@@ -33,7 +33,7 @@ export default function OfficerDashboardPage() {
           {pending.length ? <div className="queue-list">{pending.slice(0, 5).map((order) => (
             <div className="queue-row" key={order.id}>
               <span className="avatar soft">{initials(order.user?.fullName || "Member")}</span>
-              <div className="queue-person"><strong>{order.user?.fullName || "Member"}</strong><small>{order.user?.room} · {timeAgo(order.createdAt)}</small></div>
+              <div className="queue-person"><strong>{order.user?.fullName || "Member"}</strong><small suppressHydrationWarning>{order.user?.room} · {timeAgo(order.createdAt)}</small></div>
               <div className="queue-meal"><strong>{order.item.name}</strong><small>{order.item.mealPeriod} · Qty {order.quantity}</small></div>
               <b>{formatMoney(order.total)}</b>
               <div className="queue-actions"><button className="reject-icon" onClick={() => void updateOrderStatus(order.id, "rejected")} aria-label="Reject order"><X size={17} /></button><button className="confirm-icon" onClick={() => void updateOrderStatus(order.id, "confirmed")} aria-label="Confirm order"><Check size={17} /></button></div>
