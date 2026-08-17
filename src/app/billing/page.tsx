@@ -14,11 +14,12 @@ export default function BillingPage() {
   const pending = own.filter((order) => order.status === "pending");
   const total = confirmed.reduce((sum, order) => sum + order.total, 0);
   const pendingTotal = pending.reduce((sum, order) => sum + order.total, 0);
+  const billingMonth = new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(new Date());
 
   return (
     <PortalShell title="Monthly bill" description="A clear, itemised record of every confirmed meal.">
       <section className="bill-hero">
-        <div><span>August {new Date().getFullYear()}</span><h2>{formatMoney(total)}</h2><p>Current confirmed total</p></div>
+        <div><span>{billingMonth}</span><h2>{formatMoney(total)}</h2><p>Current confirmed total</p></div>
         <div className="bill-hero-side"><span><CheckCircle2 size={17} /> {confirmed.length} confirmed meals</span><span><Clock3 size={17} /> {formatMoney(pendingTotal)} pending</span><button><Download size={16} /> Download statement</button></div>
       </section>
       <section className="stats-grid member-stats billing-stats">

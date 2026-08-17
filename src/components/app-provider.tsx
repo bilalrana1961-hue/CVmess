@@ -3,7 +3,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { demoMembers, demoMenu, demoNotifications, demoOrders, memberProfile, officerProfile } from "@/lib/demo-data";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { AppNotification, MemberSummary, MenuItem, Order, OrderStatus, Profile } from "@/lib/types";
 
@@ -18,6 +17,7 @@ interface CVMessContextValue {
   accounts: Profile[];
   configured: boolean;
   loading: boolean;
+  error: string;
   placeOrder: (item: MenuItem, quantity?: number, note?: string) => Promise<void>;
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
   saveMenuItem: (draft: MenuDraft) => Promise<void>;
@@ -63,44 +63,52 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const configured = isSupabaseConfigured();
-  const isOfficerRoute = pathname.startsWith("/officer");
-  const [profile, setProfile] = useState<Profile>(isOfficerRoute ? officerProfile : memberProfile);
-  const [menu, setMenu] = useState<MenuItem[]>(configured ? [] : demoMenu);
-  const [orders, setOrders] = useState<Order[]>(configured ? [] : demoOrders);
-  const [notifications, setNotifications] = useState<AppNotification[]>(configured ? [] : demoNotifications);
-  const [members, setMembers] = useState<MemberSummary[]>(configured ? [] : demoMembers);
-  const [accounts, setAccounts] = useState<Profile[]>(configured ? [] : [officerProfile, ...demoMembers]);
+  const [profile, setProfile] = useState<Profile>({ id: "", fullName: "Account", email: "", phone: "", room: "", role: pathname.startsWith("/officer") ? "officer" : "member" });
+  const [menu, setMenu] = useState<MenuItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [members, setMembers] = useState<MemberSummary[]>([]);
+  const [accounts, setAccounts] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(configured);
+  const [error, setError] = useState(configured ? "" : "CVmess is temporarily unavailable because its database connection is not configured.");
   const supabase = useMemo(() => createClient(), []);
 
   const loadData = useCallback(async () => {
     if (!supabase) return;
     setLoading(true);
+    setError("");
     setMenu([]);
     setOrders([]);
     setNotifications([]);
     setMembers([]);
     setAccounts([]);
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) { setError("We could not verify your session. Please sign in again."); setLoading(false); return; }
     if (!user) {
       setLoading(false);
       return;
     }
-    const { data: profileRow } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+    const { data: profileRow, error: profileError } = await supabase.from("profiles").select("*").eq("id", user.id).single();
     if (!profileRow) {
+      setError(profileError?.message || "Your CVmess profile could not be loaded. Please contact a mess officer.");
       setLoading(false);
       return;
     }
     const currentProfile = mapProfile(profileRow);
     setProfile(currentProfile);
 
-    const [{ data: menuRows }, { data: orderRows }, { data: noteRows }] = await Promise.all([
+    const [{ data: menuRows, error: menuError }, { data: orderRows, error: orderError }, { data: noteRows, error: noteError }] = await Promise.all([
       supabase.from("menu_items").select("*").order("service_date").order("meal_period"),
       currentProfile.role === "officer"
         ? supabase.from("orders").select("*, menu_item:menu_items(*), user:profiles(*)").order("created_at", { ascending: false })
         : supabase.from("orders").select("*, menu_item:menu_items(*)").eq("user_id", user.id).order("created_at", { ascending: false }),
       supabase.from("notifications").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
     ]);
+    if (menuError || orderError || noteError) {
+      setError("Some CVmess information could not be loaded. Please check your connection and try again.");
+      setLoading(false);
+      return;
+    }
 
     if (menuRows) setMenu(menuRows.map((row, index) => mapMenu(row, index)));
     if (orderRows) {
@@ -128,10 +136,15 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     })));
 
     if (currentProfile.role === "officer") {
-      const [{ data: profileRows }, { data: accountRows }] = await Promise.all([
+      const [{ data: profileRows, error: membersError }, { data: accountRows, error: accountsError }] = await Promise.all([
         supabase.from("member_monthly_summary").select("*").order("full_name"),
         supabase.from("profiles").select("*").eq("role", "officer").order("full_name"),
       ]);
+      if (membersError || accountsError) {
+        setError("Member and billing information could not be loaded. Please try again.");
+        setLoading(false);
+        return;
+      }
       if (profileRows) setMembers(profileRows.map((row) => ({
         ...mapProfile(row),
         monthTotal: Number(row.month_total || 0),
@@ -144,12 +157,9 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   }, [supabase]);
 
   useEffect(() => {
-    if (!configured) {
-      // Demo-only route switching mirrors the role without a backend session.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setProfile(isOfficerRoute ? officerProfile : memberProfile);
-      return;
-    }
+    if (!configured) return;
+    // Data loading is the external synchronization performed by this effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadData();
     const channel = supabase
       ?.channel("cvmess-live")
@@ -160,55 +170,25 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (channel && supabase) void supabase.removeChannel(channel);
     };
-  }, [configured, isOfficerRoute, loadData, supabase]);
+  }, [configured, loadData, supabase]);
 
   async function placeOrder(item: MenuItem, quantity = 1, note = "") {
     if (orders.some((order) => order.userId === profile.id && order.menuItemId === item.id && ["pending", "confirmed"].includes(order.status))) {
       toast.info("You already ordered this meal");
       return;
     }
-    if (supabase) {
-      const { error } = await supabase.from("orders").insert({ user_id: profile.id, menu_item_id: item.id, quantity, note });
-      if (error) throw new Error(error.message);
-      await loadData();
-    } else {
-      const order: Order = {
-        id: crypto.randomUUID(),
-        userId: profile.id,
-        menuItemId: item.id,
-        quantity,
-        total: item.price * quantity,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-        note,
-        item,
-        user: profile,
-      };
-      setOrders((current) => [order, ...current]);
-    }
+    if (!supabase) throw new Error("Ordering is temporarily unavailable. Please try again later.");
+    const { error } = await supabase.from("orders").insert({ user_id: profile.id, menu_item_id: item.id, quantity, note });
+    if (error) throw new Error(error.message);
+    await loadData();
     toast.success("Order sent to the mess officer", { description: "You’ll be notified as soon as it is confirmed." });
   }
 
   async function updateOrderStatus(id: string, status: OrderStatus) {
-    if (supabase) {
-      const { error } = await supabase.from("orders").update({ status }).eq("id", id);
-      if (error) throw new Error(error.message);
-      await loadData();
-    } else {
-      setOrders((current) => current.map((order) => (order.id === id ? { ...order, status } : order)));
-      const order = orders.find((item) => item.id === id);
-      if (order && status === "confirmed" && order.userId === memberProfile.id) {
-        setNotifications((current) => [{
-          id: crypto.randomUUID(),
-          userId: order.userId,
-          title: "Order confirmed",
-          message: `Your ${order.item.name} order has been confirmed.`,
-          type: "order",
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        }, ...current]);
-      }
-    }
+    if (!supabase) throw new Error("Order updates are temporarily unavailable. Please try again later.");
+    const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+    if (error) throw new Error(error.message);
+    await loadData();
     toast.success(status === "confirmed" ? "Order confirmed" : status === "rejected" ? "Order declined" : "Order updated");
   }
 
@@ -223,61 +203,48 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
       cutoff_time: draft.cutoffTime,
       is_available: draft.isAvailable,
     };
-    if (supabase) {
-      const query = draft.id
-        ? supabase.from("menu_items").update(payload).eq("id", draft.id)
-        : supabase.from("menu_items").insert(payload);
-      const { error } = await query;
-      if (error) throw new Error(error.message);
-      await loadData();
-    } else if (draft.id) {
-      setMenu((current) => current.map((item) => item.id === draft.id ? { ...item, ...draft, id: item.id, accent: item.accent } : item));
-    } else {
-      setMenu((current) => [...current, { ...draft, id: crypto.randomUUID(), accent: accents[current.length % accents.length] }]);
-    }
+    if (!supabase) throw new Error("Menu updates are temporarily unavailable. Please try again later.");
+    const query = draft.id
+      ? supabase.from("menu_items").update(payload).eq("id", draft.id)
+      : supabase.from("menu_items").insert(payload);
+    const { error } = await query;
+    if (error) throw new Error(error.message);
+    await loadData();
     toast.success(draft.id ? "Menu item updated" : "Meal added to the menu");
   }
 
   async function toggleMenuItem(id: string) {
     const item = menu.find((entry) => entry.id === id);
     if (!item) return;
-    if (supabase) {
-      const { error } = await supabase.from("menu_items").update({ is_available: !item.isAvailable }).eq("id", id);
-      if (error) throw new Error(error.message);
-      await loadData();
-    } else {
-      setMenu((current) => current.map((entry) => entry.id === id ? { ...entry, isAvailable: !entry.isAvailable } : entry));
-    }
+    if (!supabase) throw new Error("Menu updates are temporarily unavailable. Please try again later.");
+    const { error } = await supabase.from("menu_items").update({ is_available: !item.isAvailable }).eq("id", id);
+    if (error) throw new Error(error.message);
+    await loadData();
     toast.success(item.isAvailable ? "Meal paused" : "Meal is available again");
   }
 
   async function markNotificationRead(id?: string) {
-    if (supabase) {
-      let query = supabase.from("notifications").update({ is_read: true }).eq("user_id", profile.id);
-      if (id) query = query.eq("id", id);
-      await query;
-    }
+    if (!supabase) throw new Error("Notifications are temporarily unavailable. Please try again later.");
+    let query = supabase.from("notifications").update({ is_read: true }).eq("user_id", profile.id);
+    if (id) query = query.eq("id", id);
+    await query;
     setNotifications((current) => current.map((note) => !id || note.id === id ? { ...note, isRead: true } : note));
   }
 
   async function markPayment(memberId: string, paid: boolean) {
-    if (supabase) {
-      const month = new Date().toISOString().slice(0, 7) + "-01";
-      const { error } = await supabase.from("payments").upsert({ user_id: memberId, billing_month: month, status: paid ? "paid" : "due", paid_at: paid ? new Date().toISOString() : null }, { onConflict: "user_id,billing_month" });
-      if (error) throw new Error(error.message);
-      await loadData();
-    } else {
-      setMembers((current) => current.map((member) => member.id === memberId ? { ...member, paymentStatus: paid ? "paid" : "due" } : member));
-    }
+    if (!supabase) throw new Error("Payment updates are temporarily unavailable. Please try again later.");
+    const month = new Date().toISOString().slice(0, 7) + "-01";
+    const { error } = await supabase.from("payments").upsert({ user_id: memberId, billing_month: month, status: paid ? "paid" : "due", paid_at: paid ? new Date().toISOString() : null }, { onConflict: "user_id,billing_month" });
+    if (error) throw new Error(error.message);
+    await loadData();
     toast.success(paid ? "Payment marked as received" : "Payment marked as due");
   }
 
   async function createOfficer(details: { name: string; email: string; password: string; unit: string }) {
-    if (supabase) {
-      const { error } = await supabase.functions.invoke("create-officer", { body: details });
-      if (error) throw new Error(error.message);
-      await loadData();
-    }
+    if (!supabase) throw new Error("Officer creation is temporarily unavailable. Please try again later.");
+    const { error } = await supabase.functions.invoke("create-officer", { body: details });
+    if (error) throw new Error(error.message);
+    await loadData();
     toast.success("Officer account created");
   }
 
@@ -287,7 +254,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   }
 
   const value: CVMessContextValue = {
-    profile, menu, orders, notifications, members, accounts, configured, loading,
+    profile, menu, orders, notifications, members, accounts, configured, loading, error,
     placeOrder, updateOrderStatus, saveMenuItem, toggleMenuItem,
     markNotificationRead, markPayment, createOfficer, signOut,
   };

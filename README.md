@@ -13,7 +13,6 @@ CVmess is a transparent meal ordering and monthly billing app for the CV 105 com
 - Menu creation, editing, and availability controls
 - Member billing table and payment-status tracking
 - Responsive khaki/olive interface for desktop and mobile
-- Demo mode when Supabase environment variables are absent
 
 ## Connect Supabase
 
@@ -33,7 +32,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. Without `.env.local`, the same URL runs a fully interactive sample workspace. Use the “Switch to officer/member” card in the sidebar to test the whole flow.
+Open `http://localhost:3000`. A valid Supabase configuration is required; missing services are shown as user-friendly availability errors.
 
 ## Production
 

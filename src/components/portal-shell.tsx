@@ -35,7 +35,7 @@ const officerNav = [
 
 export function PortalShell({ children, title, description }: { children: React.ReactNode; title: string; description?: string }) {
   const pathname = usePathname();
-  const { profile, notifications, configured, signOut } = useCVMess();
+  const { profile, notifications, loading, error, signOut } = useCVMess();
   const [mobileOpen, setMobileOpen] = useState(false);
   const nav = profile.role === "officer" ? officerNav : memberNav;
   const unread = notifications.filter((note) => !note.isRead).length;
@@ -59,15 +59,6 @@ export function PortalShell({ children, title, description }: { children: React.
         })}
       </nav>
       <div className="sidebar-spacer" />
-      {!configured && (
-        <div className="demo-card">
-          <span>Demo workspace</span>
-          <p>Explore both sides of the full ordering flow.</p>
-          <Link href={profile.role === "officer" ? "/dashboard" : "/officer"}>
-            Switch to {profile.role === "officer" ? "member" : "officer"}
-          </Link>
-        </div>
-      )}
       <div className="sidebar-profile">
         <span className="avatar">{initials(profile.fullName)}</span>
         <div><strong>{profile.fullName}</strong><small>{profile.room}</small></div>
@@ -101,7 +92,7 @@ export function PortalShell({ children, title, description }: { children: React.
             </button>
           </div>
         </header>
-        <div className="page-content">{children}</div>
+        <div className="page-content">{error ? <div className="panel empty-state" role="alert"><h3>We couldn’t load CVmess</h3><p>{error}</p><button className="button dark small" onClick={() => window.location.reload()}>Try again</button></div> : loading ? <div className="panel empty-state"><h3>Loading your account</h3><p>Please wait a moment.</p></div> : children}</div>
       </main>
       <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
         {nav.slice(0, 4).map((item) => {

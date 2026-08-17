@@ -16,6 +16,9 @@ export default function OfficerDashboardPage() {
   const todayMenu = menu.filter((item) => item.serviceDate === isoDate());
   const todayRevenue = confirmed.filter((order) => order.item.serviceDate === isoDate()).reduce((sum, order) => sum + order.total, 0);
   const monthTotal = members.reduce((sum, member) => sum + member.monthTotal, 0);
+  const collected = members.filter((member) => member.paymentStatus === "paid").reduce((sum, member) => sum + member.monthTotal, 0);
+  const collectionProgress = monthTotal ? Math.round((collected / monthTotal) * 100) : 0;
+  const monthName = new Intl.DateTimeFormat("en", { month: "long" }).format(new Date());
 
   return (
     <PortalShell title="Mess overview" description="Live operations, order decisions, and member billing.">
@@ -23,7 +26,7 @@ export default function OfficerDashboardPage() {
       <section className="stats-grid officer-stats">
         <StatCard label="Pending orders" value={String(pending.length)} helper="Needs your attention" icon={Clock3} tone="rust" />
         <StatCard label="Today’s confirmed" value={formatMoney(todayRevenue)} helper={`${confirmed.filter((order) => order.item.serviceDate === isoDate()).length} meal orders`} icon={IndianRupee} tone="green" />
-        <StatCard label="Active members" value="100" helper="5 shown in demo" icon={Users} tone="sand" />
+        <StatCard label="Active members" value={String(members.length)} helper="Registered member accounts" icon={Users} tone="sand" />
         <StatCard label="Month to date" value={formatMoney(monthTotal)} helper="Across all members" icon={ReceiptText} tone="olive" />
       </section>
 
@@ -42,16 +45,16 @@ export default function OfficerDashboardPage() {
         </article>
         <article className="panel today-operations">
           <div className="panel-heading"><div><span>Today</span><h3>Menu status</h3></div><Link href="/officer/menu">Manage</Link></div>
-          <div className="ops-menu-list">{todayMenu.map((item) => {
+          <div className="ops-menu-list">{todayMenu.length ? todayMenu.map((item) => {
             const count = orders.filter((order) => order.menuItemId === item.id && order.status === "confirmed").reduce((sum, order) => sum + order.quantity, 0);
             return <div key={item.id}><span className="order-icon" style={{ background: `${item.accent}20`, color: item.accent }}><UtensilsCrossed size={17} /></span><div><strong>{item.name}</strong><small>{item.mealPeriod} · {formatMoney(item.price)}</small></div><div className="ops-count"><b>{count}</b><small>orders</small></div><StatusPill status={item.isAvailable ? "available" : "due"} /></div>;
-          })}</div>
+          }) : <EmptyState title="No menu for today" text="Add today’s meals from Manage menu." />}</div>
         </article>
       </section>
 
       <section className="panel collection-panel">
-        <div className="panel-heading"><div><span>Billing pulse</span><h3>August collection status</h3></div><Link href="/officer/members">Open member bills <ArrowRight size={15} /></Link></div>
-        <div className="collection-body"><div className="collection-number"><strong>{formatMoney(members.filter((member) => member.paymentStatus === "paid").reduce((sum, member) => sum + member.monthTotal, 0))}</strong><span>collected so far</span></div><div className="collection-progress"><span style={{ width: "38%" }} /></div><div className="collection-labels"><span><i className="paid-dot" /> Paid <b>{members.filter((member) => member.paymentStatus === "paid").length}</b></span><span><i className="due-dot" /> Due <b>{members.filter((member) => member.paymentStatus === "due").length}</b></span></div></div>
+        <div className="panel-heading"><div><span>Billing pulse</span><h3>{monthName} collection status</h3></div><Link href="/officer/members">Open member bills <ArrowRight size={15} /></Link></div>
+        <div className="collection-body"><div className="collection-number"><strong>{formatMoney(collected)}</strong><span>collected so far</span></div><div className="collection-progress"><span style={{ width: `${collectionProgress}%` }} /></div><div className="collection-labels"><span><i className="paid-dot" /> Paid <b>{members.filter((member) => member.paymentStatus === "paid").length}</b></span><span><i className="due-dot" /> Due <b>{members.filter((member) => member.paymentStatus === "due").length}</b></span></div></div>
       </section>
     </PortalShell>
   );

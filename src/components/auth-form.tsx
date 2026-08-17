@@ -6,7 +6,7 @@ import { ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, Phone, UserRo
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Logo } from "@/components/logo";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
 export function AuthForm({ mode, officer = false, inviteCode = "" }: { mode: "login" | "signup"; officer?: boolean; inviteCode?: string }) {
   const router = useRouter();
@@ -23,12 +23,7 @@ export function AuthForm({ mode, officer = false, inviteCode = "" }: { mode: "lo
     const password = String(data.get("password"));
     const supabase = createClient();
     try {
-      if (!supabase) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        toast.success(isSignup ? "Demo account ready" : "Welcome back to CVmess");
-        router.push("/dashboard");
-        return;
-      }
+      if (!supabase) throw new Error("CVmess sign-in is temporarily unavailable. Please contact the administrator.");
       if (isSignup) {
         const { data: auth, error: authError } = await supabase.auth.signUp({
           email,
@@ -70,14 +65,13 @@ export function AuthForm({ mode, officer = false, inviteCode = "" }: { mode: "lo
           <div className="auth-heading"><span>{officer ? "Mess officer portal" : isSignup ? "Create your member account" : "Welcome back"}</span><h2>{isSignup ? (officer ? "Create officer account" : "Join CVmess") : (officer ? "Officer sign in" : "Member sign in")}</h2><p>{officer ? "Use the separate credentials provided for mess administration." : isSignup ? "Enter your details as registered with the mess." : "Use your registered email and password."}</p></div>
           <form onSubmit={submit}>
             {isSignup && <div className="field-row"><label><span>Full name</span><div className="input-wrap"><UserRound size={18} /><input required name="fullName" placeholder="Hamza Ahmed" autoComplete="name" /></div></label><label><span>Unit</span><div className="input-wrap"><input required name="room" placeholder="105" /></div></label></div>}
-            <label><span>Email address</span><div className="input-wrap"><Mail size={18} /><input required type="email" name="email" placeholder="you@example.com" autoComplete="email" defaultValue={!isSignup && !isSupabaseConfigured() ? "member@cvmess.pk" : ""} /></div></label>
+            <label><span>Email address</span><div className="input-wrap"><Mail size={18} /><input required type="email" name="email" placeholder="you@example.com" autoComplete="email" /></div></label>
             {isSignup && <label><span>Phone number</span><div className="input-wrap"><Phone size={18} /><input required type="tel" name="phone" placeholder="+92 300 1234567" autoComplete="tel" /></div></label>}
-            <label><span>Password</span><div className="input-wrap"><LockKeyhole size={18} /><input required minLength={8} type={showPassword ? "text" : "password"} name="password" placeholder="At least 8 characters" autoComplete={isSignup ? "new-password" : "current-password"} defaultValue={!isSignup && !isSupabaseConfigured() ? "cvmess-demo" : ""} /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>
+            <label><span>Password</span><div className="input-wrap"><LockKeyhole size={18} /><input required minLength={8} type={showPassword ? "text" : "password"} name="password" placeholder="At least 8 characters" autoComplete={isSignup ? "new-password" : "current-password"} /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>
             {!isSignup && <div className="form-options"><span /> <Link href="/forgot-password">Forgot password?</Link></div>}
             {error && <p className="form-error">{error}</p>}
             <button className="button dark auth-submit" disabled={busy}>{busy ? <LoaderCircle className="spin" size={18} /> : <>{isSignup ? "Create account" : "Sign in"}<ArrowRight size={17} /></>}</button>
           </form>
-          {!isSupabaseConfigured() && <p className="demo-hint"><b>Demo mode:</b> use the pre-filled details or enter anything valid.</p>}
           <p className="auth-switch">{isSignup ? "Already have an account?" : "New to CVmess?"} <Link href={isSignup ? "/login" : "/signup"}>{isSignup ? "Sign in" : "Create account"}</Link></p>
           {!isSignup && <p className="auth-switch"><Link href={officer ? "/login" : "/officer/login"}>{officer ? "Member sign in" : "Officer sign in"}</Link></p>}
         </div>
