@@ -24,7 +24,7 @@ interface CVMessContextValue {
   toggleMenuItem: (id: string) => Promise<void>;
   markNotificationRead: (id?: string) => Promise<void>;
   markPayment: (memberId: string, paid: boolean) => Promise<void>;
-  createOfficerInvite: () => Promise<string>;
+  createOfficer: (details: { name: string; email: string; password: string; unit: string }) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -38,7 +38,7 @@ function mapProfile(row: Record<string, unknown>): Profile {
     fullName: String(row.full_name || "CVmess Member"),
     email: String(row.email || ""),
     phone: String(row.phone || ""),
-    room: String(row.room || "Room not set"),
+    room: String(row.room || "Unit not set"),
     role: row.role === "officer" ? "officer" : "member",
     joinedAt: row.created_at ? String(row.created_at) : undefined,
   };
@@ -267,13 +267,13 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     toast.success(paid ? "Payment marked as received" : "Payment marked as due");
   }
 
-  async function createOfficerInvite() {
+  async function createOfficer(details: { name: string; email: string; password: string; unit: string }) {
     if (supabase) {
-      const { data, error } = await supabase.rpc("create_officer_invite");
+      const { error } = await supabase.functions.invoke("create-officer", { body: details });
       if (error) throw new Error(error.message);
-      return `${window.location.origin}/officer/join?code=${data}`;
+      await loadData();
     }
-    return `${window.location.origin}/officer/join?code=demo-officer-invite`;
+    toast.success("Officer account created");
   }
 
   async function signOut() {
@@ -284,7 +284,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   const value: CVMessContextValue = {
     profile, menu, orders, notifications, members, accounts, configured, loading,
     placeOrder, updateOrderStatus, saveMenuItem, toggleMenuItem,
-    markNotificationRead, markPayment, createOfficerInvite, signOut,
+    markNotificationRead, markPayment, createOfficer, signOut,
   };
 
   return <CVMessContext.Provider value={value}>{children}</CVMessContext.Provider>;

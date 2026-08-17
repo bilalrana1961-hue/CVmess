@@ -6,7 +6,7 @@ export const memberProfile: Profile = {
   fullName: "Hamza Ahmed",
   email: "hamza@cvmess.pk",
   phone: "+92 300 1234567",
-  room: "Room 214",
+  room: "Unit 214",
   role: "member",
   joinedAt: "2025-09-01",
 };
@@ -16,7 +16,7 @@ export const officerProfile: Profile = {
   fullName: "Fahad Khan",
   email: "officer@cvmess.pk",
   phone: "+92 301 5550105",
-  room: "Mess Office",
+  room: "Unit 105",
   role: "officer",
 };
 
@@ -53,10 +53,10 @@ export const demoMenu: MenuItem[] = Array.from({ length: 7 }).flatMap((_, day) =
 
 const demoMembersBase: Profile[] = [
   memberProfile,
-  { id: "member-2", fullName: "Ayesha Malik", email: "ayesha@cvmess.pk", phone: "+92 302 1188220", room: "Room 108", role: "member" },
-  { id: "member-3", fullName: "Bilal Raza", email: "bilal@cvmess.pk", phone: "+92 333 4201188", room: "Room 305", role: "member" },
-  { id: "member-4", fullName: "Sana Ali", email: "sana@cvmess.pk", phone: "+92 310 9911220", room: "Room 117", role: "member" },
-  { id: "member-5", fullName: "Usman Tariq", email: "usman@cvmess.pk", phone: "+92 321 5552910", room: "Room 402", role: "member" },
+  { id: "member-2", fullName: "Ayesha Malik", email: "ayesha@cvmess.pk", phone: "+92 302 1188220", room: "Unit 108", role: "member" },
+  { id: "member-3", fullName: "Bilal Raza", email: "bilal@cvmess.pk", phone: "+92 333 4201188", room: "Unit 305", role: "member" },
+  { id: "member-4", fullName: "Sana Ali", email: "sana@cvmess.pk", phone: "+92 310 9911220", room: "Unit 117", role: "member" },
+  { id: "member-5", fullName: "Usman Tariq", email: "usman@cvmess.pk", phone: "+92 321 5552910", room: "Unit 402", role: "member" },
 ];
 
 const pastItem = (name: string, mealPeriod: MenuItem["mealPeriod"], price: number, days: number): MenuItem => ({

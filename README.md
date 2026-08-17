@@ -4,7 +4,7 @@ CVmess is a transparent meal ordering and monthly billing app for the CV 105 com
 
 ## Included
 
-- Member sign-up and sign-in with email, phone, room, and password
+- Member sign-up and sign-in with email, phone, unit, and password
 - Daily and weekly menus with prices and order cut-off times
 - Pending, confirmed, rejected, and cancelled order states
 - Instant in-app confirmation notifications through Supabase Realtime
