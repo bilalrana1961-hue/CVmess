@@ -100,7 +100,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     const [{ data: menuRows, error: menuError }, { data: orderRows, error: orderError }, { data: noteRows, error: noteError }] = await Promise.all([
       supabase.from("menu_items").select("*").order("service_date").order("meal_period"),
       currentProfile.role === "officer"
-        ? supabase.from("orders").select("*, menu_item:menu_items(*), user:profiles(*)").order("created_at", { ascending: false })
+        ? supabase.from("orders").select("*, menu_item:menu_items(*), user:profiles!orders_user_id_fkey(*)").order("created_at", { ascending: false })
         : supabase.from("orders").select("*, menu_item:menu_items(*)").eq("user_id", user.id).order("created_at", { ascending: false }),
       supabase.from("notifications").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
     ]);
