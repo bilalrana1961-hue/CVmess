@@ -19,12 +19,13 @@ export async function updateSession(request: NextRequest) {
   });
 
   const { data: claims } = await supabase.auth.getClaims();
+  const publicOfficerPath = request.nextUrl.pathname === "/officer/login" || request.nextUrl.pathname === "/officer/join";
   const protectedPath = ["/dashboard", "/menu", "/orders", "/billing", "/notifications", "/officer"].some(
     (path) => request.nextUrl.pathname.startsWith(path),
-  );
+  ) && !publicOfficerPath;
   if (!claims?.claims && protectedPath) {
     const target = request.nextUrl.clone();
-    target.pathname = "/login";
+    target.pathname = request.nextUrl.pathname.startsWith("/officer") ? "/officer/login" : "/login";
     target.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(target);
   }

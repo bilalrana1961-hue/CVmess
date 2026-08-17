@@ -24,7 +24,7 @@ interface CVMessContextValue {
   toggleMenuItem: (id: string) => Promise<void>;
   markNotificationRead: (id?: string) => Promise<void>;
   markPayment: (memberId: string, paid: boolean) => Promise<void>;
-  setAccountRole: (accountId: string, role: Profile["role"]) => Promise<void>;
+  createOfficerInvite: () => Promise<string>;
   signOut: () => Promise<void>;
 }
 
@@ -125,7 +125,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     if (currentProfile.role === "officer") {
       const [{ data: profileRows }, { data: accountRows }] = await Promise.all([
         supabase.from("member_monthly_summary").select("*").order("full_name"),
-        supabase.from("profiles").select("*").order("full_name"),
+        supabase.from("profiles").select("*").eq("role", "officer").order("full_name"),
       ]);
       if (profileRows) setMembers(profileRows.map((row) => ({
         ...mapProfile(row),
@@ -267,15 +267,13 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     toast.success(paid ? "Payment marked as received" : "Payment marked as due");
   }
 
-  async function setAccountRole(accountId: string, role: Profile["role"]) {
+  async function createOfficerInvite() {
     if (supabase) {
-      const { error } = await supabase.rpc("set_user_role", { target_user_id: accountId, requested_role: role });
+      const { data, error } = await supabase.rpc("create_officer_invite");
       if (error) throw new Error(error.message);
-      await loadData();
-    } else {
-      setAccounts((current) => current.map((account) => account.id === accountId ? { ...account, role } : account));
+      return `${window.location.origin}/officer/join?code=${data}`;
     }
-    toast.success(role === "officer" ? "Officer access granted" : "Officer access removed");
+    return `${window.location.origin}/officer/join?code=demo-officer-invite`;
   }
 
   async function signOut() {
@@ -286,7 +284,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   const value: CVMessContextValue = {
     profile, menu, orders, notifications, members, accounts, configured, loading,
     placeOrder, updateOrderStatus, saveMenuItem, toggleMenuItem,
-    markNotificationRead, markPayment, setAccountRole, signOut,
+    markNotificationRead, markPayment, createOfficerInvite, signOut,
   };
 
   return <CVMessContext.Provider value={value}>{children}</CVMessContext.Provider>;

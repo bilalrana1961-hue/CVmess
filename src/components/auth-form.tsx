@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Logo } from "@/components/logo";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
-export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+export function AuthForm({ mode, officer = false, inviteCode = "" }: { mode: "login" | "signup"; officer?: boolean; inviteCode?: string }) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -30,22 +30,27 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         return;
       }
       if (isSignup) {
-        const { error: authError } = await supabase.auth.signUp({
+        const { data: auth, error: authError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { full_name: String(data.get("fullName")), phone: String(data.get("phone")), room: String(data.get("room")) },
-            emailRedirectTo: `${window.location.origin}/auth/confirm`,
+            data: { full_name: String(data.get("fullName")), phone: String(data.get("phone")), room: String(data.get("room")), account_type: officer ? "officer" : "member", officer_invite: officer ? inviteCode : undefined },
           },
         });
         if (authError) throw authError;
-        toast.success("Account created", { description: "Check your email to confirm your address." });
-        router.push("/login");
+        if (!auth.session) throw new Error("Email confirmation is still enabled in Supabase. Disable Confirm email, then try again.");
+        toast.success(officer ? "Officer account created" : "Account created");
+        router.push(officer ? "/officer" : "/dashboard");
       } else {
         const { data: auth, error: authError } = await supabase.auth.signInWithPassword({ email, password });
         if (authError) throw authError;
         const { data: profile } = await supabase.from("profiles").select("role").eq("id", auth.user.id).single();
-        router.push(profile?.role === "officer" ? "/officer" : "/dashboard");
+        const isOfficer = profile?.role === "officer";
+        if (isOfficer !== officer) {
+          await supabase.auth.signOut();
+          throw new Error(isOfficer ? "Use the separate Officer sign in." : "This is a member account. Use Member sign in.");
+        }
+        router.push(officer ? "/officer" : "/dashboard");
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Something went wrong. Please try again.");
@@ -62,7 +67,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       <section className="auth-panel">
         <div className="auth-box">
           <div className="mobile-auth-logo"><Logo /></div>
-          <div className="auth-heading"><span>{isSignup ? "Create your member account" : "Welcome back"}</span><h2>{isSignup ? "Join CVmess" : "Sign in to CVmess"}</h2><p>{isSignup ? "Enter your details as registered with the mess." : "Use your registered email and password."}</p></div>
+          <div className="auth-heading"><span>{officer ? "Mess officer portal" : isSignup ? "Create your member account" : "Welcome back"}</span><h2>{isSignup ? (officer ? "Create officer account" : "Join CVmess") : (officer ? "Officer sign in" : "Member sign in")}</h2><p>{officer ? "Use the separate credentials provided for mess administration." : isSignup ? "Enter your details as registered with the mess." : "Use your registered email and password."}</p></div>
           <form onSubmit={submit}>
             {isSignup && <div className="field-row"><label><span>Full name</span><div className="input-wrap"><UserRound size={18} /><input required name="fullName" placeholder="Hamza Ahmed" autoComplete="name" /></div></label><label><span>Room</span><div className="input-wrap"><input required name="room" placeholder="Room 214" /></div></label></div>}
             <label><span>Email address</span><div className="input-wrap"><Mail size={18} /><input required type="email" name="email" placeholder="you@example.com" autoComplete="email" defaultValue={!isSignup && !isSupabaseConfigured() ? "member@cvmess.pk" : ""} /></div></label>
@@ -74,6 +79,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           </form>
           {!isSupabaseConfigured() && <p className="demo-hint"><b>Demo mode:</b> use the pre-filled details or enter anything valid.</p>}
           <p className="auth-switch">{isSignup ? "Already have an account?" : "New to CVmess?"} <Link href={isSignup ? "/login" : "/signup"}>{isSignup ? "Sign in" : "Create account"}</Link></p>
+          {!isSignup && <p className="auth-switch"><Link href={officer ? "/login" : "/officer/login"}>{officer ? "Member sign in" : "Officer sign in"}</Link></p>}
         </div>
       </section>
     </main>
