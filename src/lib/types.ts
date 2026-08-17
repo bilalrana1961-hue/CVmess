@@ -1,5 +1,5 @@
 export type Role = "member" | "officer";
-export type MealPeriod = "Breakfast" | "Lunch" | "Dinner";
+export type MealPeriod = "Breakfast" | "Tea Break" | "Lunch" | "Dinner";
 export type OrderStatus = "pending" | "confirmed" | "rejected" | "cancelled";
 
 export interface Profile {

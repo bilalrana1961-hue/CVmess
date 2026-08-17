@@ -18,7 +18,7 @@ export default function MenuPage() {
     <PortalShell title="Weekly menu" description="Plan ahead and order any available meal.">
       <div className="toolbar panel">
         <div className="week-picker"><button aria-label="Previous week"><ChevronLeft size={17} /></button><span><CalendarDays size={17} /> This week</span><button aria-label="Next week"><ChevronRight size={17} /></button></div>
-        <div className="segmented">{["All meals", "Breakfast", "Lunch", "Dinner"].map((value) => <button key={value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{value}</button>)}</div>
+        <div className="segmented">{["All meals", "Breakfast", "Tea Break", "Lunch", "Dinner"].map((value) => <button key={value} className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{value}</button>)}</div>
         <label className="search-field"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search menu" /></label>
       </div>
       <div className="week-menu">
