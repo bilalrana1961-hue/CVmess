@@ -3,6 +3,9 @@
 
 create extension if not exists pgcrypto;
 
+-- Keep internal bookkeeping functions outside the Data API's exposed schema.
+create schema if not exists private;
+
 create type public.app_role as enum ('member', 'officer');
 create type public.meal_period as enum ('Breakfast', 'Lunch', 'Dinner');
 create type public.order_status as enum ('pending', 'confirmed', 'rejected', 'cancelled');
@@ -74,12 +77,16 @@ create table public.payments (
 create index orders_user_created_idx on public.orders (user_id, created_at desc);
 create index orders_status_created_idx on public.orders (status, created_at desc);
 create index menu_items_date_idx on public.menu_items (service_date, meal_period);
+create index menu_items_created_by_idx on public.menu_items (created_by);
+create index orders_decided_by_idx on public.orders (decided_by);
+create index orders_menu_item_idx on public.orders (menu_item_id);
+create index payments_recorded_by_idx on public.payments (recorded_by);
 create index notifications_user_unread_idx on public.notifications (user_id, is_read, created_at desc);
 create unique index one_active_order_per_meal_idx
   on public.orders (user_id, menu_item_id)
   where status in ('pending', 'confirmed');
 
-create or replace function public.is_officer()
+create or replace function private.is_officer()
 returns boolean
 language sql
 stable
@@ -92,7 +99,7 @@ as $$
   );
 $$;
 
-create or replace function public.handle_new_user()
+create or replace function private.handle_new_user()
 returns trigger
 language plpgsql
 security definer
@@ -113,9 +120,9 @@ $$;
 
 create trigger on_auth_user_created
   after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+  for each row execute procedure private.handle_new_user();
 
-create or replace function public.prepare_order()
+create or replace function private.prepare_order()
 returns trigger
 language plpgsql
 security definer
@@ -138,9 +145,9 @@ $$;
 
 create trigger prepare_order_before_write
   before insert or update of menu_item_id, quantity on public.orders
-  for each row execute procedure public.prepare_order();
+  for each row execute procedure private.prepare_order();
 
-create or replace function public.notify_order_decision()
+create or replace function private.notify_order_decision()
 returns trigger
 language plpgsql
 security definer
@@ -169,7 +176,15 @@ $$;
 
 create trigger notify_after_order_decision
   before update of status on public.orders
-  for each row execute procedure public.notify_order_decision();
+  for each row execute procedure private.notify_order_decision();
+
+revoke all on schema private from public, anon;
+grant usage on schema private to authenticated;
+revoke all on function private.is_officer() from public, anon;
+grant execute on function private.is_officer() to authenticated;
+revoke all on function private.handle_new_user() from public, anon, authenticated;
+revoke all on function private.prepare_order() from public, anon, authenticated;
+revoke all on function private.notify_order_decision() from public, anon, authenticated;
 
 alter table public.profiles enable row level security;
 alter table public.menu_items enable row level security;
@@ -179,7 +194,7 @@ alter table public.payments enable row level security;
 
 create policy "Members can read own profile; officers can read all"
   on public.profiles for select to authenticated
-  using (id = auth.uid() or public.is_officer());
+  using (id = auth.uid() or private.is_officer());
 create policy "Members can update their own profile"
   on public.profiles for update to authenticated
   using (id = auth.uid()) with check (id = auth.uid());
@@ -187,15 +202,15 @@ create policy "Members can update their own profile"
 create policy "Signed-in users can read the menu"
   on public.menu_items for select to authenticated using (true);
 create policy "Officers can create menu items"
-  on public.menu_items for insert to authenticated with check (public.is_officer());
+  on public.menu_items for insert to authenticated with check (private.is_officer());
 create policy "Officers can update menu items"
-  on public.menu_items for update to authenticated using (public.is_officer()) with check (public.is_officer());
+  on public.menu_items for update to authenticated using (private.is_officer()) with check (private.is_officer());
 create policy "Officers can delete menu items"
-  on public.menu_items for delete to authenticated using (public.is_officer());
+  on public.menu_items for delete to authenticated using (private.is_officer());
 
 create policy "Members see own orders; officers see all"
   on public.orders for select to authenticated
-  using (user_id = auth.uid() or public.is_officer());
+  using (user_id = auth.uid() or private.is_officer());
 create policy "Members create their own pending orders"
   on public.orders for insert to authenticated
   with check (user_id = auth.uid() and status = 'pending');
@@ -205,7 +220,7 @@ create policy "Members can cancel own pending orders"
   with check (user_id = auth.uid() and status = 'cancelled');
 create policy "Officers decide orders"
   on public.orders for update to authenticated
-  using (public.is_officer()) with check (public.is_officer());
+  using (private.is_officer()) with check (private.is_officer());
 
 create policy "Members read their notifications"
   on public.notifications for select to authenticated using (user_id = auth.uid());
@@ -215,13 +230,15 @@ create policy "Members mark their notifications read"
 
 create policy "Members see own payment; officers see all"
   on public.payments for select to authenticated
-  using (user_id = auth.uid() or public.is_officer());
+  using (user_id = auth.uid() or private.is_officer());
 create policy "Officers record payments"
-  on public.payments for insert to authenticated with check (public.is_officer());
+  on public.payments for insert to authenticated with check (private.is_officer());
 create policy "Officers update payments"
-  on public.payments for update to authenticated using (public.is_officer()) with check (public.is_officer());
+  on public.payments for update to authenticated using (private.is_officer()) with check (private.is_officer());
 
 revoke update on public.profiles from authenticated;
+grant usage on schema public to authenticated;
+grant select on public.profiles to authenticated;
 grant update (full_name, phone, room) on public.profiles to authenticated;
 grant select, insert on public.orders to authenticated;
 grant update (status) on public.orders to authenticated;
@@ -281,5 +298,5 @@ alter publication supabase_realtime add table public.orders;
 alter publication supabase_realtime add table public.notifications;
 alter publication supabase_realtime add table public.menu_items;
 
--- Promote the real mess officer after they create an account:
+-- Promote the designated officer only after their email-verified account exists:
 -- update public.profiles set role = 'officer' where email = 'officer@example.com';

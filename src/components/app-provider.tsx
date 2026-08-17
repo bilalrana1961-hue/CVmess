@@ -15,6 +15,7 @@ interface CVMessContextValue {
   orders: Order[];
   notifications: AppNotification[];
   members: MemberSummary[];
+  accounts: Profile[];
   configured: boolean;
   loading: boolean;
   placeOrder: (item: MenuItem, quantity?: number, note?: string) => Promise<void>;
@@ -23,6 +24,7 @@ interface CVMessContextValue {
   toggleMenuItem: (id: string) => Promise<void>;
   markNotificationRead: (id?: string) => Promise<void>;
   markPayment: (memberId: string, paid: boolean) => Promise<void>;
+  setAccountRole: (accountId: string, role: Profile["role"]) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -67,6 +69,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   const [orders, setOrders] = useState<Order[]>(demoOrders);
   const [notifications, setNotifications] = useState<AppNotification[]>(demoNotifications);
   const [members, setMembers] = useState<MemberSummary[]>(demoMembers);
+  const [accounts, setAccounts] = useState<Profile[]>([officerProfile, ...demoMembers]);
   const [loading, setLoading] = useState(configured);
   const supabase = useMemo(() => createClient(), []);
 
@@ -120,19 +123,25 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     })));
 
     if (currentProfile.role === "officer") {
-      const { data: profileRows } = await supabase.from("member_monthly_summary").select("*").order("full_name");
+      const [{ data: profileRows }, { data: accountRows }] = await Promise.all([
+        supabase.from("member_monthly_summary").select("*").order("full_name"),
+        supabase.from("profiles").select("*").order("full_name"),
+      ]);
       if (profileRows) setMembers(profileRows.map((row) => ({
         ...mapProfile(row),
         monthTotal: Number(row.month_total || 0),
         orderCount: Number(row.order_count || 0),
         paymentStatus: row.payment_status === "paid" ? "paid" : "due",
       })));
+      if (accountRows) setAccounts(accountRows.map(mapProfile));
     }
     setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
     if (!configured) {
+      // Demo-only route switching mirrors the role without a backend session.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProfile(isOfficerRoute ? officerProfile : memberProfile);
       return;
     }
@@ -258,15 +267,26 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     toast.success(paid ? "Payment marked as received" : "Payment marked as due");
   }
 
+  async function setAccountRole(accountId: string, role: Profile["role"]) {
+    if (supabase) {
+      const { error } = await supabase.rpc("set_user_role", { target_user_id: accountId, requested_role: role });
+      if (error) throw new Error(error.message);
+      await loadData();
+    } else {
+      setAccounts((current) => current.map((account) => account.id === accountId ? { ...account, role } : account));
+    }
+    toast.success(role === "officer" ? "Officer access granted" : "Officer access removed");
+  }
+
   async function signOut() {
     if (supabase) await supabase.auth.signOut();
     router.push("/login");
   }
 
   const value: CVMessContextValue = {
-    profile, menu, orders, notifications, members, configured, loading,
+    profile, menu, orders, notifications, members, accounts, configured, loading,
     placeOrder, updateOrderStatus, saveMenuItem, toggleMenuItem,
-    markNotificationRead, markPayment, signOut,
+    markNotificationRead, markPayment, setAccountRole, signOut,
   };
 
   return <CVMessContext.Provider value={value}>{children}</CVMessContext.Provider>;

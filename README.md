@@ -17,11 +17,12 @@ CVmess is a transparent meal ordering and monthly billing app for the CV 105 com
 
 ## Connect Supabase
 
-1. Create a Supabase project.
-2. Open its SQL editor and run `supabase/migrations/202608160001_initial_cvmess.sql`.
-3. Copy `.env.example` to `.env.local` and add the project URL and anon key.
-4. In Supabase Authentication, enable Email and choose whether email confirmation is required.
-5. Create the mess officer through the normal sign-up form, then run the final `update profiles set role = 'officer'...` statement shown at the bottom of the migration.
+The production Supabase project and schema are configured. For a fresh installation:
+
+1. Create a Supabase project and run `supabase/migrations/202608160001_initial_cvmess.sql`.
+2. Copy `.env.example` to `.env.local` and add the project URL and publishable key.
+3. Add the deployed `/auth/confirm` and `/auth/callback` URLs to Supabase Auth redirect URLs.
+4. Let the designated officer create and verify an account, then promote only that email with the statement documented at the bottom of the migration.
 
 The database uses Row Level Security. Members can only access their own orders, notifications, and payment record; officers can manage menus and order decisions.
 
