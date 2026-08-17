@@ -65,17 +65,22 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   const configured = isSupabaseConfigured();
   const isOfficerRoute = pathname.startsWith("/officer");
   const [profile, setProfile] = useState<Profile>(isOfficerRoute ? officerProfile : memberProfile);
-  const [menu, setMenu] = useState<MenuItem[]>(demoMenu);
-  const [orders, setOrders] = useState<Order[]>(demoOrders);
-  const [notifications, setNotifications] = useState<AppNotification[]>(demoNotifications);
-  const [members, setMembers] = useState<MemberSummary[]>(demoMembers);
-  const [accounts, setAccounts] = useState<Profile[]>([officerProfile, ...demoMembers]);
+  const [menu, setMenu] = useState<MenuItem[]>(configured ? [] : demoMenu);
+  const [orders, setOrders] = useState<Order[]>(configured ? [] : demoOrders);
+  const [notifications, setNotifications] = useState<AppNotification[]>(configured ? [] : demoNotifications);
+  const [members, setMembers] = useState<MemberSummary[]>(configured ? [] : demoMembers);
+  const [accounts, setAccounts] = useState<Profile[]>(configured ? [] : [officerProfile, ...demoMembers]);
   const [loading, setLoading] = useState(configured);
   const supabase = useMemo(() => createClient(), []);
 
   const loadData = useCallback(async () => {
     if (!supabase) return;
     setLoading(true);
+    setMenu([]);
+    setOrders([]);
+    setNotifications([]);
+    setMembers([]);
+    setAccounts([]);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setLoading(false);
