@@ -180,10 +180,6 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   }, [configured, loadData, pathname, supabase]);
 
   async function placeOrder(item: MenuItem, quantity = 1, note = "") {
-    if (orders.some((order) => order.userId === profile.id && order.menuItemId === item.id && ["pending", "confirmed"].includes(order.status))) {
-      toast.info("You already ordered this meal");
-      return;
-    }
     if (!supabase) throw new Error("Ordering is temporarily unavailable. Please try again later.");
     const { error } = await supabase.from("orders").insert({ user_id: profile.id, menu_item_id: item.id, quantity, note });
     if (error) throw new Error(error.message);

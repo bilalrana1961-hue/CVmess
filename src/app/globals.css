@@ -191,4 +191,21 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .auth-submit { min-height: 50px; }
 }
 
+.meal-price { display: grid; gap: 2px; flex: 0 0 auto; }
+.meal-price > strong { font-family: Georgia, serif; font-size: 17px; font-weight: 600; }
+.meal-price > small, .ordered-summary { color: var(--muted); font-size: 8px; }
+.ordered-summary { display: block; margin-top: 8px; color: var(--olive); font-weight: 750; }
+.meal-order-controls, .quantity-stepper { display: flex; align-items: center; gap: 7px; }
+.quantity-stepper { min-height: 34px; padding: 2px; border: 1px solid var(--line); border-radius: 9px; background: white; }
+.quantity-stepper button { width: 30px; height: 30px; border: 0; border-radius: 7px; background: var(--sand); color: var(--olive-dark); display: grid; place-items: center; cursor: pointer; }
+.quantity-stepper button:disabled { opacity: .4; cursor: not-allowed; }
+.quantity-stepper output { min-width: 20px; text-align: center; font-size: 11px; font-weight: 850; }
+.meal-card.compact .meal-footer { gap: 10px; flex-wrap: wrap; }
+
+@media (max-width: 540px) {
+  .meal-footer { align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+  .meal-order-controls { width: 100%; justify-content: space-between; }
+  .order-button { flex: 1; justify-content: center; }
+}
+
 @media (prefers-reduced-motion: reduce) { *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
