@@ -27,6 +27,7 @@ interface CVMessContextValue {
   createOfficer: (details: { name: string; email: string; password: string; unit: string }) => Promise<void>;
   updateProfile: (details: { fullName: string; phone: string; unit: string }) => Promise<void>;
   changePassword: (password: string) => Promise<void>;
+  resetMemberPassword: (memberId: string, temporaryPassword: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -270,6 +271,13 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     toast.success("Password changed successfully");
   }
 
+  async function resetMemberPassword(memberId: string, temporaryPassword: string) {
+    if (!supabase) throw new Error("Password recovery is temporarily unavailable. Please try again later.");
+    const { error: resetError } = await supabase.functions.invoke("reset-member-password", { body: { memberId, temporaryPassword } });
+    if (resetError) throw new Error(resetError.message);
+    toast.success("Temporary password assigned", { description: "Ask the member to change it from Settings after signing in." });
+  }
+
   async function signOut() {
     if (supabase) await supabase.auth.signOut();
     router.push("/login");
@@ -278,7 +286,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   const value: CVMessContextValue = {
     profile, menu, orders, notifications, members, accounts, configured, loading, error,
     placeOrder, updateOrderStatus, saveMenuItem, toggleMenuItem,
-    markNotificationRead, markPayment, createOfficer, updateProfile, changePassword, signOut,
+    markNotificationRead, markPayment, createOfficer, updateProfile, changePassword, resetMemberPassword, signOut,
   };
 
   return <CVMessContext.Provider value={value}>{children}</CVMessContext.Provider>;
