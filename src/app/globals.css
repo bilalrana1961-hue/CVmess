@@ -262,6 +262,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .bills-row > .button { justify-self: end; }
 .bill-orders { color: var(--muted); }
 .bill-amount { font-family: Georgia, serif; font-size: 14px; }
+.menu-workflow { margin-bottom: 14px; padding: 17px 20px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.menu-workflow > div:first-child { display: flex; align-items: center; gap: 13px; }
+.menu-workflow strong { display: block; font-family: Georgia, serif; font-size: 16px; font-weight: 550; }
+.menu-workflow p, .section-row-heading p { margin: 4px 0 0; color: var(--muted); font-size: 9px; line-height: 1.45; }
+.menu-mode-switch { flex: 0 0 auto; display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: #f1eee5; }
+.menu-mode-switch button { min-height: 36px; padding: 0 11px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); display: flex; align-items: center; gap: 6px; font-size: 9px; font-weight: 800; cursor: pointer; }
+.menu-mode-switch button.active { background: white; color: var(--olive); box-shadow: 0 2px 8px rgba(55,52,40,.09); }
+.weekly-tabs button small { min-width: 19px; height: 19px; margin-top: 2px; padding: 0 5px; border-radius: 10px; background: var(--olive-soft); display: grid; place-items: center; }
 
 @media (max-width: 760px) {
   .member-actions { width: 100%; justify-content: stretch; }
@@ -280,6 +288,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .bills-row .bill-amount { justify-self: end; }
   .bills-row .status-pill { align-self: center; }
   .bills-row > .button { min-height: 44px; justify-self: end; }
+  .menu-workflow { align-items: stretch; flex-direction: column; }
+  .menu-workflow > div:first-child { align-items: flex-start; }
+  .menu-mode-switch { width: 100%; }
+  .menu-mode-switch button { flex: 1; justify-content: center; min-height: 44px; }
 }
 
 @media (prefers-reduced-motion: reduce) { *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }

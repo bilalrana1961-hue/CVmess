@@ -25,6 +25,19 @@ export interface MenuItem {
   accent: string;
 }
 
+export interface WeeklyMenuTemplate {
+  id: string;
+  weekday: number;
+  mealPeriod: MealPeriod;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  cutoffTime: string;
+  isAvailable: boolean;
+  accent: string;
+}
+
 export interface Order {
   id: string;
   userId: string;

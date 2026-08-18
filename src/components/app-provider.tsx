@@ -4,13 +4,15 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import type { AppNotification, MemberSummary, MenuItem, Order, OrderStatus, Profile } from "@/lib/types";
+import type { AppNotification, MemberSummary, MenuItem, Order, OrderStatus, Profile, WeeklyMenuTemplate } from "@/lib/types";
 
 type MenuDraft = Omit<MenuItem, "id" | "accent"> & { id?: string };
+type WeeklyMenuDraft = Omit<WeeklyMenuTemplate, "id" | "accent"> & { id?: string };
 
 interface CVMessContextValue {
   profile: Profile;
   menu: MenuItem[];
+  weeklyMenu: WeeklyMenuTemplate[];
   orders: Order[];
   notifications: AppNotification[];
   members: MemberSummary[];
@@ -22,6 +24,8 @@ interface CVMessContextValue {
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
   saveMenuItem: (draft: MenuDraft) => Promise<void>;
   toggleMenuItem: (id: string) => Promise<void>;
+  saveWeeklyMenuItem: (draft: WeeklyMenuDraft) => Promise<void>;
+  toggleWeeklyMenuItem: (id: string) => Promise<void>;
   markNotificationRead: (id?: string) => Promise<void>;
   markPayment: (memberId: string, paid: boolean) => Promise<void>;
   createOfficer: (details: { name: string; email: string; password: string; unit: string }) => Promise<void>;
@@ -69,12 +73,22 @@ function mapMenu(row: Record<string, unknown>, index = 0): MenuItem {
   };
 }
 
+function mapWeeklyMenu(row: Record<string, unknown>, index = 0): WeeklyMenuTemplate {
+  return {
+    id: String(row.id), weekday: Number(row.weekday), mealPeriod: String(row.meal_period) as MenuItem["mealPeriod"],
+    name: String(row.name), description: String(row.description || ""), price: Number(row.price),
+    category: String(row.category || "Meal"), cutoffTime: String(row.cutoff_time || "12:30").slice(0, 5),
+    isAvailable: Boolean(row.is_available), accent: accents[index % accents.length],
+  };
+}
+
 export function CVMessProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const configured = isSupabaseConfigured();
   const [profile, setProfile] = useState<Profile>({ id: "", fullName: "Account", email: "", phone: "", room: "", role: pathname.startsWith("/officer") ? "officer" : "member" });
   const [menu, setMenu] = useState<MenuItem[]>([]);
+  const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenuTemplate[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [members, setMembers] = useState<MemberSummary[]>([]);
@@ -88,6 +102,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError("");
     setMenu([]);
+    setWeeklyMenu([]);
     setOrders([]);
     setNotifications([]);
     setMembers([]);
@@ -146,11 +161,12 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     })));
 
     if (currentProfile.role === "officer") {
-      const [{ data: profileRows, error: membersError }, { data: accountRows, error: accountsError }] = await Promise.all([
+      const [{ data: profileRows, error: membersError }, { data: accountRows, error: accountsError }, { data: templateRows, error: templatesError }] = await Promise.all([
         supabase.from("member_monthly_summary").select("*").order("full_name"),
         supabase.from("profiles").select("*").eq("role", "officer").order("full_name"),
+        supabase.from("weekly_menu_templates").select("*").order("weekday").order("meal_period"),
       ]);
-      if (membersError || accountsError) {
+      if (membersError || accountsError || templatesError) {
         setError("Member and billing information could not be loaded. Please try again.");
         setLoading(false);
         return;
@@ -162,6 +178,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
         paymentStatus: row.payment_status === "paid" ? "paid" : "due",
       })));
       if (accountRows) setAccounts(accountRows.map(mapProfile));
+      if (templateRows) setWeeklyMenu(templateRows.map((row, index) => mapWeeklyMenu(row, index)));
     }
     setLoading(false);
   }, [supabase]);
@@ -176,6 +193,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => void loadData())
       .on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, () => void loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "weekly_menu_templates" }, () => void loadData())
       .subscribe();
     return () => {
       if (channel && supabase) void supabase.removeChannel(channel);
@@ -208,6 +226,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
       category: draft.category,
       cutoff_time: draft.cutoffTime,
       is_available: draft.isAvailable,
+      is_override: true,
     };
     if (!supabase) throw new Error("Menu updates are temporarily unavailable. Please try again later.");
     const query = draft.id
@@ -223,10 +242,33 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     const item = menu.find((entry) => entry.id === id);
     if (!item) return;
     if (!supabase) throw new Error("Menu updates are temporarily unavailable. Please try again later.");
-    const { error } = await supabase.from("menu_items").update({ is_available: !item.isAvailable }).eq("id", id);
+    const { error } = await supabase.from("menu_items").update({ is_available: !item.isAvailable, is_override: true }).eq("id", id);
     if (error) throw new Error(error.message);
     await loadData();
     toast.success(item.isAvailable ? "Meal paused" : "Meal is available again");
+  }
+
+  async function saveWeeklyMenuItem(draft: WeeklyMenuDraft) {
+    if (!supabase) throw new Error("Weekly menu updates are temporarily unavailable. Please try again later.");
+    const payload = { weekday: draft.weekday, meal_period: draft.mealPeriod, name: draft.name, description: draft.description, price: draft.price, category: draft.category, cutoff_time: draft.cutoffTime, is_available: draft.isAvailable };
+    const query = draft.id ? supabase.from("weekly_menu_templates").update(payload).eq("id", draft.id) : supabase.from("weekly_menu_templates").insert(payload);
+    const { error } = await query;
+    if (error) throw new Error(error.message);
+    const { error: refreshError } = await supabase.rpc("refresh_weekly_menu", { days_ahead: 56 });
+    if (refreshError) throw new Error(refreshError.message);
+    await loadData();
+    toast.success(draft.id ? "Weekly meal updated" : "Meal added to the weekly routine", { description: "Upcoming menus have been refreshed automatically." });
+  }
+
+  async function toggleWeeklyMenuItem(id: string) {
+    const item = weeklyMenu.find((entry) => entry.id === id);
+    if (!item || !supabase) return;
+    const { error } = await supabase.from("weekly_menu_templates").update({ is_available: !item.isAvailable }).eq("id", id);
+    if (error) throw new Error(error.message);
+    const { error: refreshError } = await supabase.rpc("refresh_weekly_menu", { days_ahead: 56 });
+    if (refreshError) throw new Error(refreshError.message);
+    await loadData();
+    toast.success(item.isAvailable ? "Weekly meal paused" : "Weekly meal enabled");
   }
 
   async function markNotificationRead(id?: string) {
@@ -284,8 +326,8 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   }
 
   const value: CVMessContextValue = {
-    profile, menu, orders, notifications, members, accounts, configured, loading, error,
-    placeOrder, updateOrderStatus, saveMenuItem, toggleMenuItem,
+    profile, menu, weeklyMenu, orders, notifications, members, accounts, configured, loading, error,
+    placeOrder, updateOrderStatus, saveMenuItem, toggleMenuItem, saveWeeklyMenuItem, toggleWeeklyMenuItem,
     markNotificationRead, markPayment, createOfficer, updateProfile, changePassword, resetMemberPassword, signOut,
   };
 
