@@ -53,7 +53,7 @@ export default function OfficerDashboardPage() {
       </section>
 
       <section className="panel collection-panel">
-        <div className="panel-heading"><div><span>Billing pulse</span><h3>{monthName} collection status</h3></div><Link href="/officer/members">Open member bills <ArrowRight size={15} /></Link></div>
+        <div className="panel-heading"><div><span>Billing pulse</span><h3>{monthName} collection status</h3></div><Link href="/officer/bills">Open bills <ArrowRight size={15} /></Link></div>
         <div className="collection-body"><div className="collection-number"><strong>{formatMoney(collected)}</strong><span>collected so far</span></div><div className="collection-progress"><span style={{ width: `${collectionProgress}%` }} /></div><div className="collection-labels"><span><i className="paid-dot" /> Paid <b>{members.filter((member) => member.paymentStatus === "paid").length}</b></span><span><i className="due-dot" /> Due <b>{members.filter((member) => member.paymentStatus === "due").length}</b></span></div></div>
       </section>
     </PortalShell>

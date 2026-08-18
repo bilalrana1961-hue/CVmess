@@ -11,6 +11,7 @@ import {
   Menu as MenuIcon,
   ReceiptText,
   Settings,
+  ShieldCheck,
   Users,
   X,
 } from "lucide-react";
@@ -31,7 +32,9 @@ const officerNav = [
   { href: "/officer", label: "Overview", mobileLabel: "Home", icon: LayoutDashboard },
   { href: "/officer/orders", label: "Order queue", mobileLabel: "Orders", icon: ClipboardList },
   { href: "/officer/menu", label: "Manage menu", mobileLabel: "Menu", icon: CalendarDays },
-  { href: "/officer/members", label: "Members & bills", mobileLabel: "Members", icon: Users },
+  { href: "/officer/bills", label: "Bills", mobileLabel: "Bills", icon: ReceiptText },
+  { href: "/officer/members", label: "Manage members", mobileLabel: "Members", icon: Users },
+  { href: "/officer/officers", label: "Manage officers", mobileLabel: "Officers", icon: ShieldCheck },
   { href: "/settings", label: "Settings", mobileLabel: "Settings", icon: Settings },
 ];
 

@@ -240,9 +240,46 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .recovery-steps p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .recovery-steps strong { margin-bottom: 2px; color: var(--ink); font-size: 11px; }
 
+.page-intro-card { min-height: 82px; margin-bottom: 14px; padding: 17px 20px; display: flex; align-items: center; gap: 14px; }
+.page-intro-icon { width: 43px; height: 43px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 12px; background: var(--olive-soft); color: var(--olive); }
+.page-intro-card > div { flex: 1; }
+.page-intro-card strong { font-family: Georgia, serif; font-size: 17px; font-weight: 550; }
+.page-intro-card p { max-width: 650px; margin: 4px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
+.toolbar-count { margin-left: auto; color: var(--muted); font-size: 9px; font-weight: 750; white-space: nowrap; }
+.directory-table, .bills-table { overflow: hidden; }
+.directory-head, .directory-row { display: grid; align-items: center; gap: 18px; padding: 0 20px; }
+.member-directory .directory-head, .member-directory .directory-row { grid-template-columns: 1.25fr 1.3fr .45fr .7fr; }
+.officer-directory .directory-head, .officer-directory .directory-row { grid-template-columns: 1.5fr .5fr .75fr; }
+.directory-head, .bills-head { min-height: 40px; background: #f2efe6; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; font-size: 7px; font-weight: 850; }
+.directory-row { min-height: 72px; border-top: 1px solid #ebe7dc; font-size: 9px; }
+.directory-row > .button { justify-self: end; }
+.contact-cell span, .contact-cell small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.contact-cell small { margin-top: 4px; color: var(--muted); font-size: 8px; }
+.unit-cell { font-size: 9px; }
+.access-badge { width: fit-content; display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border-radius: 20px; background: var(--olive-soft); color: var(--olive); font-size: 8px; font-weight: 800; }
+.bills-head, .bills-row { display: grid; grid-template-columns: 1.5fr .55fr .65fr .55fr .7fr; align-items: center; gap: 16px; padding: 0 20px; }
+.bills-row { min-height: 72px; border-top: 1px solid #ebe7dc; font-size: 9px; }
+.bills-row > .button { justify-self: end; }
+.bill-orders { color: var(--muted); }
+.bill-amount { font-family: Georgia, serif; font-size: 14px; }
+
 @media (max-width: 760px) {
   .member-actions { width: 100%; justify-content: stretch; }
   .member-actions .button { flex: 1; justify-content: center; }
+  .page-intro-card { align-items: flex-start; flex-wrap: wrap; }
+  .page-intro-card > div { min-width: calc(100% - 60px); }
+  .page-intro-card > .button { width: 100%; justify-content: center; min-height: 44px; }
+  .toolbar-count { width: 100%; margin-left: 0; }
+  .directory-head, .bills-head { display: none; }
+  .directory-row, .bills-row { grid-template-columns: 1fr auto !important; gap: 11px; padding: 16px 14px; }
+  .directory-row .member-cell, .bills-row .member-cell { grid-column: 1 / -1; }
+  .member-directory .contact-cell { grid-column: 1 / -1; }
+  .directory-row > .button { grid-column: 1 / -1; width: 100%; min-height: 44px; justify-self: stretch; justify-content: center; }
+  .officer-directory .access-badge { justify-self: end; }
+  .bills-row .bill-orders:before { content: "This month: "; }
+  .bills-row .bill-amount { justify-self: end; }
+  .bills-row .status-pill { align-self: center; }
+  .bills-row > .button { min-height: 44px; justify-self: end; }
 }
 
 @media (prefers-reduced-motion: reduce) { *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
