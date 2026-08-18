@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, Phone, UserRound } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
@@ -9,7 +8,6 @@ import { Logo } from "@/components/logo";
 import { createClient } from "@/lib/supabase/client";
 
 export function AuthForm({ mode, officer = false, inviteCode = "" }: { mode: "login" | "signup"; officer?: boolean; inviteCode?: string }) {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -35,7 +33,7 @@ export function AuthForm({ mode, officer = false, inviteCode = "" }: { mode: "lo
         if (authError) throw authError;
         if (!auth.session) throw new Error("Email confirmation is still enabled in Supabase. Disable Confirm email, then try again.");
         toast.success(officer ? "Officer account created" : "Account created");
-        router.push(officer ? "/officer" : "/dashboard");
+        window.location.replace(officer ? "/officer" : "/dashboard");
       } else {
         const { data: auth, error: authError } = await supabase.auth.signInWithPassword({ email, password });
         if (authError) throw authError;
@@ -45,7 +43,7 @@ export function AuthForm({ mode, officer = false, inviteCode = "" }: { mode: "lo
           await supabase.auth.signOut();
           throw new Error(isOfficer ? "Use the separate Officer sign in." : "This is a member account. Use Member sign in.");
         }
-        router.push(officer ? "/officer" : "/dashboard");
+        window.location.replace(officer ? "/officer" : "/dashboard");
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Something went wrong. Please try again.");

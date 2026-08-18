@@ -32,6 +32,13 @@ const CVMessContext = createContext<CVMessContextValue | null>(null);
 
 const accents = ["#d99b56", "#a9684a", "#73845f", "#8f7957"];
 
+function isPortalPath(pathname: string) {
+  if (pathname === "/officer/login" || pathname === "/officer/join") return false;
+  return ["/dashboard", "/menu", "/orders", "/billing", "/notifications", "/officer"].some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+}
+
 function mapProfile(row: Record<string, unknown>): Profile {
   return {
     id: String(row.id),
@@ -157,7 +164,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   }, [supabase]);
 
   useEffect(() => {
-    if (!configured) return;
+    if (!configured || !isPortalPath(pathname)) return;
     // Data loading is the external synchronization performed by this effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadData();
@@ -170,7 +177,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (channel && supabase) void supabase.removeChannel(channel);
     };
-  }, [configured, loadData, supabase]);
+  }, [configured, loadData, pathname, supabase]);
 
   async function placeOrder(item: MenuItem, quantity = 1, note = "") {
     if (orders.some((order) => order.userId === profile.id && order.menuItemId === item.id && ["pending", "confirmed"].includes(order.status))) {
