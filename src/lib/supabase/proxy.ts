@@ -20,7 +20,7 @@ export async function updateSession(request: NextRequest) {
 
   const { data: claims } = await supabase.auth.getClaims();
   const publicOfficerPath = request.nextUrl.pathname === "/officer/login" || request.nextUrl.pathname === "/officer/join";
-  const protectedPath = ["/dashboard", "/menu", "/orders", "/billing", "/notifications", "/officer"].some(
+  const protectedPath = ["/dashboard", "/menu", "/orders", "/billing", "/notifications", "/settings", "/officer"].some(
     (path) => request.nextUrl.pathname.startsWith(path),
   ) && !publicOfficerPath;
   if (!claims?.claims && protectedPath) {

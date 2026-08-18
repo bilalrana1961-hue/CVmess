@@ -25,6 +25,8 @@ interface CVMessContextValue {
   markNotificationRead: (id?: string) => Promise<void>;
   markPayment: (memberId: string, paid: boolean) => Promise<void>;
   createOfficer: (details: { name: string; email: string; password: string; unit: string }) => Promise<void>;
+  updateProfile: (details: { fullName: string; phone: string; unit: string }) => Promise<void>;
+  changePassword: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -34,7 +36,7 @@ const accents = ["#d99b56", "#a9684a", "#73845f", "#8f7957"];
 
 function isPortalPath(pathname: string) {
   if (pathname === "/officer/login" || pathname === "/officer/join") return false;
-  return ["/dashboard", "/menu", "/orders", "/billing", "/notifications", "/officer"].some(
+  return ["/dashboard", "/menu", "/orders", "/billing", "/notifications", "/settings", "/officer"].some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
 }
@@ -251,6 +253,23 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     toast.success("Officer account created");
   }
 
+  async function updateProfile(details: { fullName: string; phone: string; unit: string }) {
+    if (!supabase || !profile.id) throw new Error("Profile updates are temporarily unavailable. Please try again later.");
+    const { error: profileError } = await supabase.from("profiles").update({ full_name: details.fullName, phone: details.phone, room: details.unit }).eq("id", profile.id);
+    if (profileError) throw new Error(profileError.message);
+    const { error: metadataError } = await supabase.auth.updateUser({ data: { full_name: details.fullName, phone: details.phone, room: details.unit, unit: details.unit } });
+    if (metadataError) throw new Error(metadataError.message);
+    await loadData();
+    toast.success("Profile updated");
+  }
+
+  async function changePassword(password: string) {
+    if (!supabase) throw new Error("Password changes are temporarily unavailable. Please try again later.");
+    const { error: passwordError } = await supabase.auth.updateUser({ password });
+    if (passwordError) throw new Error(passwordError.message);
+    toast.success("Password changed successfully");
+  }
+
   async function signOut() {
     if (supabase) await supabase.auth.signOut();
     router.push("/login");
@@ -259,7 +278,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   const value: CVMessContextValue = {
     profile, menu, orders, notifications, members, accounts, configured, loading, error,
     placeOrder, updateOrderStatus, saveMenuItem, toggleMenuItem,
-    markNotificationRead, markPayment, createOfficer, signOut,
+    markNotificationRead, markPayment, createOfficer, updateProfile, changePassword, signOut,
   };
 
   return <CVMessContext.Provider value={value}>{children}</CVMessContext.Provider>;

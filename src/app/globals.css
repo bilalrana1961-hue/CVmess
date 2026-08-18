@@ -208,4 +208,27 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .order-button { flex: 1; justify-content: center; }
 }
 
+.settings-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr); gap: 18px; align-items: start; }
+.settings-column { display: grid; gap: 18px; }
+.settings-card { padding: 22px; display: grid; gap: 16px; }
+.settings-card label { display: grid; gap: 7px; }
+.settings-card label > span, .account-role > span { color: #525347; font-size: 11px; font-weight: 750; }
+.settings-card label > small { color: var(--muted); font-size: 9px; }
+.settings-card .input-wrap { width: 100%; }
+.settings-card .input-wrap.read-only { background: #f2f0e8; }
+.account-role { min-height: 45px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; display: flex; align-items: center; justify-content: space-between; }
+.account-role strong { color: var(--olive); font-size: 11px; }
+.settings-card > .button { min-height: 44px; justify-content: center; }
+.signout-card { grid-template-columns: 1fr auto; align-items: center; }
+.signout-card h3 { margin: 4px 0; font-family: Georgia, serif; font-size: 18px; }
+.signout-card > div > span { color: var(--rust); font-size: 9px; font-weight: 850; letter-spacing: .8px; text-transform: uppercase; }
+.signout-card p { margin: 0; color: var(--muted); font-size: 10px; }
+
+@media (max-width: 760px) {
+  .settings-grid { grid-template-columns: 1fr; }
+  .settings-card { padding: 18px; }
+  .signout-card { grid-template-columns: 1fr; }
+  .signout-card .button { width: 100%; }
+}
+
 @media (prefers-reduced-motion: reduce) { *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }

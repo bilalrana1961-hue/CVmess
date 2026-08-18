@@ -24,6 +24,7 @@ const memberNav = [
   { href: "/menu", label: "Weekly menu", mobileLabel: "Menu", icon: CalendarDays },
   { href: "/orders", label: "My orders", mobileLabel: "Orders", icon: ClipboardList },
   { href: "/billing", label: "Monthly bill", mobileLabel: "Bill", icon: ReceiptText },
+  { href: "/settings", label: "Settings", mobileLabel: "Settings", icon: Settings },
 ];
 
 const officerNav = [
@@ -31,6 +32,7 @@ const officerNav = [
   { href: "/officer/orders", label: "Order queue", mobileLabel: "Orders", icon: ClipboardList },
   { href: "/officer/menu", label: "Manage menu", mobileLabel: "Menu", icon: CalendarDays },
   { href: "/officer/members", label: "Members & bills", mobileLabel: "Members", icon: Users },
+  { href: "/settings", label: "Settings", mobileLabel: "Settings", icon: Settings },
 ];
 
 export function PortalShell({ children, title, description }: { children: React.ReactNode; title: string; description?: string }) {
@@ -84,7 +86,7 @@ export function PortalShell({ children, title, description }: { children: React.
                 <Bell size={20} />{unread > 0 && <span>{unread}</span>}
               </Link>
             )}
-            <Link href="#" className="icon-button desktop-only" aria-label="Settings"><Settings size={20} /></Link>
+            <Link href="/settings" className="icon-button desktop-only" aria-label="Settings"><Settings size={20} /></Link>
             <button className="profile-chip" onClick={() => void signOut()} title="Sign out">
               <span className="avatar small">{initials(profile.fullName)}</span>
               <span className="profile-chip-copy"><strong>{profile.fullName.split(" ")[0]}</strong><small>{profile.role === "officer" ? "Mess officer" : profile.room}</small></span>
