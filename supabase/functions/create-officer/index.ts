@@ -21,6 +21,7 @@ Deno.serve(async (request) => {
     const { data, error } = await admin.auth.admin.createUser({
       email, password, email_confirm: true,
       user_metadata: { full_name: name, room: unit, unit, account_type: "officer", officer_invite: invite },
+      app_metadata: { cvmess_role: "mess_officer" },
     });
     if (error) throw error;
     return new Response(JSON.stringify({ id: data.user.id }), { status: 201, headers });

@@ -29,5 +29,15 @@ export async function updateSession(request: NextRequest) {
     target.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(target);
   }
+  const headOfficerPath = request.nextUrl.pathname.startsWith("/officer/members") || request.nextUrl.pathname.startsWith("/officer/officers");
+  if (claims?.claims && headOfficerPath) {
+    const { data: officer } = await supabase.from("officer_accounts").select("level").eq("user_id", claims.claims.sub).maybeSingle();
+    if (officer?.level !== "head_officer") {
+      const target = request.nextUrl.clone();
+      target.pathname = "/officer";
+      target.search = "";
+      return NextResponse.redirect(target);
+    }
+  }
   return response;
 }

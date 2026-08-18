@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import type { AppNotification, MemberSummary, MenuItem, Order, OrderStatus, Profile, WeeklyMenuTemplate } from "@/lib/types";
+import type { AppNotification, MemberSummary, MenuItem, OfficerLevel, Order, OrderStatus, Profile, WeeklyMenuTemplate } from "@/lib/types";
 
 type MenuDraft = Omit<MenuItem, "id" | "accent"> & { id?: string };
 type WeeklyMenuDraft = Omit<WeeklyMenuTemplate, "id" | "accent"> & { id?: string };
@@ -32,6 +32,8 @@ interface CVMessContextValue {
   updateProfile: (details: { fullName: string; phone: string; unit: string }) => Promise<void>;
   changePassword: (password: string) => Promise<void>;
   resetMemberPassword: (memberId: string, temporaryPassword: string) => Promise<void>;
+  resetOfficerPassword: (officerId: string, temporaryPassword: string) => Promise<void>;
+  deleteAccount: (targetId: string, targetType: "member" | "officer") => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -119,7 +121,16 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       return;
     }
-    const currentProfile = mapProfile(profileRow);
+    let currentProfile = mapProfile(profileRow);
+    if (currentProfile.role === "officer") {
+      const { data: officerAccount, error: officerError } = await supabase.from("officer_accounts").select("level").eq("user_id", user.id).single();
+      if (officerError || !officerAccount) {
+        setError("Your officer permissions could not be verified. Please contact the Head Officer.");
+        setLoading(false);
+        return;
+      }
+      currentProfile = { ...currentProfile, officerLevel: officerAccount.level as OfficerLevel };
+    }
     setProfile(currentProfile);
 
     const [{ data: menuRows, error: menuError }, { data: orderRows, error: orderError }, { data: noteRows, error: noteError }] = await Promise.all([
@@ -161,9 +172,12 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     })));
 
     if (currentProfile.role === "officer") {
+      const accountRequest = currentProfile.officerLevel === "head_officer"
+        ? supabase.from("officer_accounts").select("level, profile:profiles!officer_accounts_user_id_fkey(*)").order("created_at")
+        : Promise.resolve({ data: [], error: null });
       const [{ data: profileRows, error: membersError }, { data: accountRows, error: accountsError }, { data: templateRows, error: templatesError }] = await Promise.all([
         supabase.from("member_monthly_summary").select("*").order("full_name"),
-        supabase.from("profiles").select("*").eq("role", "officer").order("full_name"),
+        accountRequest,
         supabase.from("weekly_menu_templates").select("*").order("weekday").order("meal_period"),
       ]);
       if (membersError || accountsError || templatesError) {
@@ -177,7 +191,10 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
         orderCount: Number(row.order_count || 0),
         paymentStatus: row.payment_status === "paid" ? "paid" : "due",
       })));
-      if (accountRows) setAccounts(accountRows.map(mapProfile));
+      if (accountRows) setAccounts(accountRows.map((row) => {
+        const officerProfile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
+        return { ...mapProfile(officerProfile as Record<string, unknown>), officerLevel: row.level as OfficerLevel };
+      }));
       if (templateRows) setWeeklyMenu(templateRows.map((row, index) => mapWeeklyMenu(row, index)));
     }
     setLoading(false);
@@ -293,7 +310,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.functions.invoke("create-officer", { body: details });
     if (error) throw new Error(error.message);
     await loadData();
-    toast.success("Officer account created");
+    toast.success("Mess Officer account created");
   }
 
   async function updateProfile(details: { fullName: string; phone: string; unit: string }) {
@@ -315,9 +332,24 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
 
   async function resetMemberPassword(memberId: string, temporaryPassword: string) {
     if (!supabase) throw new Error("Password recovery is temporarily unavailable. Please try again later.");
-    const { error: resetError } = await supabase.functions.invoke("reset-member-password", { body: { memberId, temporaryPassword } });
+    const { error: resetError } = await supabase.functions.invoke("manage-account", { body: { targetId: memberId, targetType: "member", action: "reset_password", temporaryPassword } });
     if (resetError) throw new Error(resetError.message);
     toast.success("Temporary password assigned", { description: "Ask the member to change it from Settings after signing in." });
+  }
+
+  async function resetOfficerPassword(officerId: string, temporaryPassword: string) {
+    if (!supabase) throw new Error("Password recovery is temporarily unavailable. Please try again later.");
+    const { error: resetError } = await supabase.functions.invoke("manage-account", { body: { targetId: officerId, targetType: "officer", action: "reset_password", temporaryPassword } });
+    if (resetError) throw new Error(resetError.message);
+    toast.success("Mess Officer password updated");
+  }
+
+  async function deleteAccount(targetId: string, targetType: "member" | "officer") {
+    if (!supabase) throw new Error("Account deletion is temporarily unavailable. Please try again later.");
+    const { error: deleteError } = await supabase.functions.invoke("manage-account", { body: { targetId, targetType, action: "delete" } });
+    if (deleteError) throw new Error(deleteError.message);
+    await loadData();
+    toast.success(targetType === "member" ? "Member account deleted" : "Mess Officer account deleted");
   }
 
   async function signOut() {
@@ -328,7 +360,7 @@ export function CVMessProvider({ children }: { children: React.ReactNode }) {
   const value: CVMessContextValue = {
     profile, menu, weeklyMenu, orders, notifications, members, accounts, configured, loading, error,
     placeOrder, updateOrderStatus, saveMenuItem, toggleMenuItem, saveWeeklyMenuItem, toggleWeeklyMenuItem,
-    markNotificationRead, markPayment, createOfficer, updateProfile, changePassword, resetMemberPassword, signOut,
+    markNotificationRead, markPayment, createOfficer, updateProfile, changePassword, resetMemberPassword, resetOfficerPassword, deleteAccount, signOut,
   };
 
   return <CVMessContext.Provider value={value}>{children}</CVMessContext.Provider>;

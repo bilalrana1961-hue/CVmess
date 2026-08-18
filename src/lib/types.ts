@@ -1,4 +1,5 @@
 export type Role = "member" | "officer";
+export type OfficerLevel = "head_officer" | "mess_officer";
 export type MealPeriod = "Breakfast" | "Tea Break" | "Lunch" | "Dinner";
 export type OrderStatus = "pending" | "confirmed" | "rejected" | "cancelled";
 
@@ -9,6 +10,7 @@ export interface Profile {
   phone: string;
   room: string;
   role: Role;
+  officerLevel?: OfficerLevel;
   joinedAt?: string;
 }
 

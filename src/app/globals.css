@@ -249,7 +249,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .directory-table, .bills-table { overflow: hidden; }
 .directory-head, .directory-row { display: grid; align-items: center; gap: 18px; padding: 0 20px; }
 .member-directory .directory-head, .member-directory .directory-row { grid-template-columns: 1.25fr 1.3fr .45fr .7fr; }
-.officer-directory .directory-head, .officer-directory .directory-row { grid-template-columns: 1.5fr .5fr .75fr; }
+.officer-directory .directory-head, .officer-directory .directory-row { grid-template-columns: 1.4fr .4fr .65fr 1fr; }
 .directory-head, .bills-head { min-height: 40px; background: #f2efe6; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; font-size: 7px; font-weight: 850; }
 .directory-row { min-height: 72px; border-top: 1px solid #ebe7dc; font-size: 9px; }
 .directory-row > .button { justify-self: end; }
@@ -257,6 +257,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .contact-cell small { margin-top: 4px; color: var(--muted); font-size: 8px; }
 .unit-cell { font-size: 9px; }
 .access-badge { width: fit-content; display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border-radius: 20px; background: var(--olive-soft); color: var(--olive); font-size: 8px; font-weight: 800; }
+.access-badge.head { background: #e8ddbe; color: #76591f; }
+.protected-label { color: var(--muted); font-size: 8px; font-weight: 750; text-align: right; }
+.account-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.icon-danger-button { width: 35px; height: 35px; flex: 0 0 auto; border: 1px solid #ead5cf; border-radius: 9px; background: #fff9f7; color: var(--red); display: grid; place-items: center; cursor: pointer; }
+.danger-warning { margin: 0; padding: 12px 13px; border: 1px solid #edcfc7; border-radius: 10px; background: #fff4f1; color: #8c3d2f; display: flex; align-items: flex-start; gap: 9px; font-size: 10px; line-height: 1.5; }
+.danger-warning svg { flex: 0 0 auto; }
+.button.danger { background: var(--red); color: white; border-color: var(--red); }
 .bills-head, .bills-row { display: grid; grid-template-columns: 1.5fr .55fr .65fr .55fr .7fr; align-items: center; gap: 16px; padding: 0 20px; }
 .bills-row { min-height: 72px; border-top: 1px solid #ebe7dc; font-size: 9px; }
 .bills-row > .button { justify-self: end; }
@@ -284,6 +291,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .member-directory .contact-cell { grid-column: 1 / -1; }
   .directory-row > .button { grid-column: 1 / -1; width: 100%; min-height: 44px; justify-self: stretch; justify-content: center; }
   .officer-directory .access-badge { justify-self: end; }
+  .officer-directory .account-actions, .member-directory .account-actions { grid-column: 1 / -1; width: 100%; }
+  .account-actions .button { flex: 1; min-height: 44px; justify-content: center; }
+  .icon-danger-button { width: 44px; height: 44px; }
+  .protected-label { justify-self: end; }
   .bills-row .bill-orders:before { content: "This month: "; }
   .bills-row .bill-amount { justify-self: end; }
   .bills-row .status-pill { align-self: center; }

@@ -51,7 +51,7 @@ export default function SettingsPage() {
           <label><span>Email address</span><div className="input-wrap read-only"><Mail size={18} /><input value={profile.email} readOnly aria-describedby="email-help" /></div><small id="email-help">Your login email cannot be changed here.</small></label>
           <label><span>Phone number</span><div className="input-wrap"><Phone size={18} /><input required name="phone" type="tel" defaultValue={profile.phone} autoComplete="tel" /></div></label>
           <label><span>Unit number</span><div className="input-wrap"><ShieldCheck size={18} /><input required name="unit" defaultValue={profile.room} /></div></label>
-          <div className="account-role"><span>Account type</span><strong>{profile.role === "officer" ? "Mess officer" : "Member"}</strong></div>
+          <div className="account-role"><span>Account type</span><strong>{profile.officerLevel === "head_officer" ? "Head Officer" : profile.role === "officer" ? "Mess Officer" : "Member"}</strong></div>
           <button className="button dark" disabled={savingProfile}><Save size={16} /> {savingProfile ? "Saving…" : "Save profile"}</button>
         </form>
 

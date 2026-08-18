@@ -42,7 +42,9 @@ export function PortalShell({ children, title, description }: { children: React.
   const pathname = usePathname();
   const { profile, notifications, loading, error, signOut } = useCVMess();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const nav = profile.role === "officer" ? officerNav : memberNav;
+  const nav = profile.role === "officer"
+    ? officerNav.filter((item) => profile.officerLevel === "head_officer" || !["/officer/members", "/officer/officers"].includes(item.href))
+    : memberNav;
   const unread = notifications.filter((note) => !note.isRead).length;
 
   const sidebar = (
@@ -51,7 +53,7 @@ export function PortalShell({ children, title, description }: { children: React.
         <Logo href={profile.role === "officer" ? "/officer" : "/dashboard"} />
         <button className="mobile-close" onClick={() => setMobileOpen(false)} aria-label="Close navigation"><X size={20} /></button>
       </div>
-      <div className="role-label">{profile.role === "officer" ? "Mess officer portal" : "Member portal"}</div>
+      <div className="role-label">{profile.officerLevel === "head_officer" ? "Head Officer portal" : profile.role === "officer" ? "Mess Officer portal" : "Member portal"}</div>
       <nav className="sidebar-nav" aria-label="Primary navigation">
         {nav.map((item) => {
           const active = item.href === "/officer" || item.href === "/dashboard" ? pathname === item.href : pathname.startsWith(item.href);
@@ -92,7 +94,7 @@ export function PortalShell({ children, title, description }: { children: React.
             <Link href="/settings" className="icon-button desktop-only" aria-label="Settings"><Settings size={20} /></Link>
             <button className="profile-chip" onClick={() => void signOut()} title="Sign out">
               <span className="avatar small">{initials(profile.fullName)}</span>
-              <span className="profile-chip-copy"><strong>{profile.fullName.split(" ")[0]}</strong><small>{profile.role === "officer" ? "Mess officer" : profile.room}</small></span>
+              <span className="profile-chip-copy"><strong>{profile.fullName.split(" ")[0]}</strong><small>{profile.officerLevel === "head_officer" ? "Head Officer" : profile.role === "officer" ? "Mess Officer" : profile.room}</small></span>
               <LogOut size={15} />
             </button>
           </div>

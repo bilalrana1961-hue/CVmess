@@ -11,8 +11,8 @@ Deno.serve(async (request) => {
     const caller = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authorization } } });
     const { data: { user }, error: userError } = await caller.auth.getUser();
     if (userError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
-    const { data: officer } = await caller.from("officer_accounts").select("user_id").eq("user_id", user.id).maybeSingle();
-    if (!officer) return new Response(JSON.stringify({ error: "Only a mess officer can reset member passwords." }), { status: 403, headers });
+    const { data: officer } = await caller.from("officer_accounts").select("user_id, level").eq("user_id", user.id).maybeSingle();
+    if (!officer || officer.level !== "head_officer") return new Response(JSON.stringify({ error: "Only the Head Officer can reset member passwords." }), { status: 403, headers });
 
     const { memberId, temporaryPassword } = await request.json();
     if (!memberId || typeof temporaryPassword !== "string" || temporaryPassword.length < 8) {

@@ -60,7 +60,7 @@ export function AuthForm({ mode, officer = false, inviteCode = "" }: { mode: "lo
       <section className="auth-panel">
         <div className="auth-box">
           <div className="mobile-auth-logo"><Logo /></div>
-          <div className="auth-heading"><span>{officer ? "Mess officer portal" : isSignup ? "Create your member account" : "Welcome back"}</span><h2>{isSignup ? (officer ? "Create officer account" : "Join CVmess") : (officer ? "Officer sign in" : "Member sign in")}</h2><p>{officer ? "Use the separate credentials provided for mess administration." : isSignup ? "Enter your details as registered with the mess." : "Use your registered email and password."}</p></div>
+          <div className="auth-heading"><span>{officer ? "Officer portal" : isSignup ? "Create your member account" : "Welcome back"}</span><h2>{isSignup ? (officer ? "Create officer account" : "Join CVmess") : (officer ? "Officer sign in" : "Member sign in")}</h2><p>{officer ? "Head Officers and Mess Officers use their provided credentials here." : isSignup ? "Enter your details as registered with the mess." : "Use your registered email and password."}</p></div>
           <form onSubmit={submit}>
             {isSignup && <div className="field-row"><label><span>Full name</span><div className="input-wrap"><UserRound size={18} /><input required name="fullName" placeholder="Hamza Ahmed" autoComplete="name" /></div></label><label><span>Unit</span><div className="input-wrap"><input required name="room" placeholder="105" /></div></label></div>}
             <label><span>Email address</span><div className="input-wrap"><Mail size={18} /><input required type="email" name="email" placeholder="you@example.com" autoComplete="email" /></div></label>
