@@ -32,7 +32,7 @@ export default function DashboardPage() {
         <StatCard label="Awaiting confirmation" value={String(pending)} helper={pending ? "The officer has been notified" : "You’re all caught up"} icon={Clock3} tone="rust" />
       </section>
 
-      <div className="section-row-heading"><div><span>Today’s menu</span><h2>Pick your meals</h2></div><Link href="/menu">View full week <ArrowRight size={16} /></Link></div>
+      <div className="section-row-heading"><div><span>Today’s menu</span><h2>Pick today’s meals</h2><p>Only meals available for {friendlyDate(isoDate(), "long")} are shown here.</p></div></div>
       <section className="meal-grid">
         {todayMenu.length ? todayMenu.map((item) => <MealCard key={item.id} item={item} />) : <EmptyState title="No meals published" text="The mess officer has not published today’s menu yet." />}
       </section>
