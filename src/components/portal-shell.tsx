@@ -22,7 +22,7 @@ import { initials } from "@/lib/format";
 
 const memberNav = [
   { href: "/dashboard", label: "Overview", mobileLabel: "Home", icon: LayoutDashboard },
-  { href: "/menu", label: "Weekly menu", mobileLabel: "Menu", icon: CalendarDays },
+  { href: "/menu", label: "Menu", mobileLabel: "Menu", icon: CalendarDays },
   { href: "/orders", label: "My orders", mobileLabel: "Orders", icon: ClipboardList },
   { href: "/billing", label: "Monthly bill", mobileLabel: "Bill", icon: ReceiptText },
   { href: "/settings", label: "Settings", mobileLabel: "Settings", icon: Settings },
