@@ -54,7 +54,7 @@ export function AuthForm({ mode, officer = false, inviteCode = "" }: { mode: "lo
     <main className="auth-page">
       <section className="auth-brand">
         <Logo />
-        <div className="auth-brand-copy"><span className="eyebrow light">CV 105 community mess</span><h1>Every meal accounted for.</h1><p>Order confidently, follow the status, and see a bill you can trust.</p></div>
+        <div className="auth-brand-copy"><span className="eyebrow light">Built for Unthak Sappers</span><h1>Every meal accounted for.</h1><p>Order confidently, follow the status, and see a bill you can trust.</p></div>
       </section>
       <section className="auth-panel">
         <div className="auth-box">
